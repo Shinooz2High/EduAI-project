@@ -35,8 +35,10 @@ import {
   Flame,
   Sliders,
   ArrowUpDown,
+  ArrowRight,
   HelpCircle,
-  Headphones
+  Headphones,
+  ChevronDown
 } from "lucide-react";
 
 // --- HỆ THỐNG DỮ LIỆU ĐẦY ĐỦ 124 TRANG SỔ TAY TOÁN THCS (LỚP 6, 7, 8, 9 - 27 CHƯƠNG) ---
@@ -767,8 +769,14 @@ export default function App() {
   const [selectedGrade, setSelectedGrade] = useState("grade6");
   const [activeCourseId, setActiveCourseId] = useState("g6-ds");
   const [activeLessonId, setActiveLessonId] = useState("g6-ds-c1");
+  
+  // Trạng thái màn hình Hub chọn môn học trước khi vào chính
+  const [currentSubject, setCurrentSubject] = useState(null); // null nghĩa là đang ở Menu chọn môn
+  const [developingSubjectModal, setDevelopingSubjectModal] = useState(null);
+
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [gradeDropdownOpen, setGradeDropdownOpen] = useState(false);
 
   const currentGradeObj = curriculum[selectedGrade] || curriculum["grade6"];
   const activeCourse = currentGradeObj.courses.find(c => c.id === activeCourseId) || currentGradeObj.courses[0];
@@ -854,6 +862,18 @@ export default function App() {
       console.error(e);
     }
   }, [userNotes]);
+
+  // Danh sách các môn học hiển thị ở Menu chọn trước khi vào
+  const SUBJECT_LIST = [
+    { id: "math", name: "Toán học THCS", icon: "📐", desc: "124 trang sổ tay, 27 chương Đại số & Hình học Lớp 6-9, 20 câu hỏi luyện tập.", active: true },
+    { id: "physics", name: "Vật Lý", icon: "⚡", desc: "Cơ học, Nhiệt học, Quang học, Điện học và Điện từ học THCS.", active: false },
+    { id: "chemistry", name: "Hóa Học", icon: "🧪", desc: "Nguyên tố, Bảng tuần hoàn, Phản ứng hóa học và Hóa hữu cơ.", active: false },
+    { id: "biology", name: "Sinh Học", icon: "🧬", desc: "Tế bào, Di truyền, Sinh thái học và Cơ thể người.", active: false },
+    { id: "literature", name: "Ngữ Văn", icon: "📚", desc: "Văn học dân gian, Thơ ca hiện đại và Kỹ năng nghị luận văn học.", active: false },
+    { id: "english", name: "Tiếng Anh", icon: "🌍", desc: "Ngữ pháp chuyên sâu, Từ vựng, Phát âm và Luyện thi chuyên đề.", active: false },
+    { id: "history", name: "Lịch Sử", icon: "🏛️", desc: "Lịch sử Việt Nam và Thế giới qua các thời kỳ.", active: false },
+    { id: "geography", name: "Địa Lý", icon: "🗺️", desc: "Địa lý tự nhiên, Kinh tế - Xã hội và Bản đồ học.", active: false }
+  ];
 
   const handleSelectGrade = (gradeKey) => {
     setSelectedGrade(gradeKey);
@@ -1197,13 +1217,168 @@ export default function App() {
 
   const mutedText = isDark ? "text-slate-400" : "text-slate-500";
 
+  // NẾU CHƯA CHỌN MÔN (ĐANG Ở MENU CHỌN MÔN TRƯỚC KHI VÀO)
+  if (!currentSubject) {
+    return (
+      <div className={`min-h-screen w-full relative overflow-x-hidden transition-colors duration-500 font-sans select-none flex flex-col items-center justify-center p-4 sm:p-8 ${
+        isDark ? "bg-[#07090f] text-white" : "bg-[#eaf0fb] text-slate-900"
+      }`}>
+        {/* ANIMATED FLUID GRADIENT WAVE BACKGROUND */}
+        <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+          <style>{`
+            @keyframes fluidWave1 {
+              0% { transform: translate(0px, 0px) scale(1); }
+              33% { transform: translate(100px, -80px) scale(1.2); }
+              66% { transform: translate(-50px, 60px) scale(0.9); }
+              100% { transform: translate(0px, 0px) scale(1); }
+            }
+            @keyframes fluidWave2 {
+              0% { transform: translate(0px, 0px) scale(1); }
+              33% { transform: translate(-120px, 90px) scale(1.3); }
+              66% { transform: translate(80px, -50px) scale(0.95); }
+              100% { transform: translate(0px, 0px) scale(1); }
+            }
+            @keyframes fluidWave3 {
+              0% { transform: translate(0px, 0px) scale(1); }
+              50% { transform: translate(70px, 100px) scale(1.15); }
+              100% { transform: translate(0px, 0px) scale(1); }
+            }
+            .animate-fluid-1 {
+              animation: fluidWave1 12s ease-in-out infinite;
+            }
+            .animate-fluid-2 {
+              animation: fluidWave2 16s ease-in-out infinite;
+            }
+            .animate-fluid-3 {
+              animation: fluidWave3 10s ease-in-out infinite;
+            }
+          `}</style>
+          
+          <div className={`absolute -top-40 -left-40 w-[650px] h-[650px] rounded-full blur-[150px] opacity-60 animate-fluid-1 ${isDark ? "bg-blue-600/30" : "bg-blue-400/40"}`} />
+          <div className={`absolute top-1/2 -right-40 w-[700px] h-[700px] rounded-full blur-[160px] opacity-60 animate-fluid-2 ${isDark ? "bg-indigo-600/30" : "bg-indigo-400/35"}`} />
+          <div className={`absolute -bottom-40 left-1/3 w-[600px] h-[600px] rounded-full blur-[140px] opacity-50 animate-fluid-3 ${isDark ? "bg-cyan-500/25" : "bg-sky-400/35"}`} />
+          
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(59,130,246,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(59,130,246,0.04)_1px,transparent_1px)] bg-[size:48px_48px]" />
+        </div>
+
+        {/* TOP CONTROLS TRONG MENU CHỌN MÔN */}
+        <div className="absolute top-6 right-6 z-20 flex items-center space-x-3">
+          <button
+            onClick={() => setIsDark(!isDark)}
+            className={`px-4 py-2 rounded-2xl flex items-center space-x-2 text-xs font-bold transition-all cursor-pointer ${glassCard} hover:border-blue-400/50`}
+          >
+            {isDark ? (
+              <>
+                <Sun className="w-4 h-4 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
+                <span>Nền Sáng</span>
+              </>
+            ) : (
+              <>
+                <Moon className="w-4 h-4 text-blue-600" />
+                <span>Nền Tối</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* HEADER MENU CHỌN MÔN */}
+        <div className="relative z-10 text-center max-w-2xl mx-auto mb-10 space-y-3">
+          <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-blue-500/15 border border-blue-400/30 text-blue-400 text-xs font-bold shadow-[0_0_20px_rgba(59,130,246,0.3)]">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>EduAI Hub • Nền tảng học tập thông minh</span>
+          </div>
+          <h1 className={`text-4xl sm:text-6xl font-black tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}>
+            Chọn Môn Học Của Bạn
+          </h1>
+          <p className={`text-sm sm:text-base font-medium ${mutedText}`}>
+            Lựa chọn môn học để bắt đầu hành trình chinh phục tri thức cùng Gia sư AI Argon
+          </p>
+        </div>
+
+        {/* LƯỚI DANH SÁCH CÁC MÔN HỌC */}
+        <div className="relative z-10 max-w-5xl w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          {SUBJECT_LIST.map((subj) => (
+            <div
+              key={subj.id}
+              onClick={() => {
+                if (subj.active) {
+                  setCurrentSubject(subj.id);
+                } else {
+                  setDevelopingSubjectModal(subj.name);
+                }
+              }}
+              className="relative group cursor-pointer"
+            >
+              {/* Ánh sáng nhẹ ở đằng sau (ambient background glow) */}
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600/30 to-cyan-400/30 rounded-[30px] blur-xl opacity-40 group-hover:opacity-80 transition duration-500 pointer-events-none" />
+
+              <div className={`relative p-6 rounded-[28px] transition-all duration-300 flex flex-col justify-between ${glassCard} hover:border-blue-400/60 hover:scale-[1.02] h-full`}>
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600/30 to-cyan-400/30 border border-blue-400/40 flex items-center justify-center text-2xl shadow-[0_0_20px_rgba(59,130,246,0.3)] group-hover:scale-110 transition-transform">
+                      {subj.icon}
+                    </div>
+                    {subj.active ? (
+                      <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                        Đã sẵn sàng
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30">
+                        Đang phát triển
+                      </span>
+                    )}
+                  </div>
+
+                  <h3 className={`text-lg font-black tracking-tight mb-2 ${isDark ? "text-white" : "text-slate-900"} group-hover:text-blue-400 transition-colors`}>
+                    {subj.name}
+                  </h3>
+                  <p className={`text-xs leading-relaxed ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+                    {subj.desc}
+                  </p>
+                </div>
+
+                <div className="pt-6 mt-4 border-t border-white/10 flex items-center justify-between text-xs font-bold text-blue-400">
+                  <span>{subj.active ? "Vào học ngay" : "Sắp ra mắt"}</span>
+                  <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* MODAL THÔNG BÁO ĐANG PHÁT TRIỂN KHI BẤM CÁC MÔN CHƯA MỞ */}
+        {developingSubjectModal && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <div className={`max-w-md w-full rounded-3xl p-6 text-center space-y-4 ${glassCard} border-amber-400/40 shadow-2xl`}>
+              <div className="w-16 h-16 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-400 flex items-center justify-center mx-auto text-2xl shadow-[0_0_25px_rgba(245,158,11,0.4)]">
+                🚧
+              </div>
+              <div>
+                <h3 className="text-lg font-black mb-1">Môn {developingSubjectModal} đang phát triển</h3>
+                <p className={`text-xs ${mutedText} leading-relaxed`}>
+                  Đội ngũ Gia sư Argon đang biên soạn nội dung chuẩn sách giáo khoa mới cho môn này. Bạn vui lòng quay lại sau hoặc trải nghiệm môn **Toán học THCS** trước nhé!
+                </p>
+              </div>
+              <button
+                onClick={() => setDevelopingSubjectModal(null)}
+                className="w-full py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-xs font-bold shadow-[0_0_20px_rgba(59,130,246,0.5)] cursor-pointer"
+              >
+                Đã hiểu, quay lại
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div
       className={`min-h-screen w-full relative overflow-x-hidden transition-colors duration-500 font-sans select-none ${
         isDark ? "bg-[#07090f] text-white" : "bg-[#eaf0fb] text-slate-900"
       }`}
     >
-      {/* AMBIENT NEON LIGHT ORBS & GRID VFX (Chuẩn Lucky Swaps) */}
+      {/* ANIMATED FLUID GRADIENT WAVE BACKGROUND & GRID VFX */}
       <style>{`
         .no-scrollbar::-webkit-scrollbar {
           display: none;
@@ -1212,21 +1387,47 @@ export default function App() {
           -ms-overflow-style: none;
           scrollbar-width: none;
         }
+        @keyframes fluidWave1 {
+          0% { transform: translate(0px, 0px) scale(1); }
+          33% { transform: translate(120px, -90px) scale(1.25); }
+          66% { transform: translate(-60px, 70px) scale(0.9); }
+          100% { transform: translate(0px, 0px) scale(1); }
+        }
+        @keyframes fluidWave2 {
+          0% { transform: translate(0px, 0px) scale(1); }
+          33% { transform: translate(-140px, 110px) scale(1.3); }
+          66% { transform: translate(90px, -60px) scale(0.95); }
+          100% { transform: translate(0px, 0px) scale(1); }
+        }
+        @keyframes fluidWave3 {
+          0% { transform: translate(0px, 0px) scale(1); }
+          50% { transform: translate(80px, 120px) scale(1.2); }
+          100% { transform: translate(0px, 0px) scale(1); }
+        }
+        .animate-fluid-1 {
+          animation: fluidWave1 14s ease-in-out infinite;
+        }
+        .animate-fluid-2 {
+          animation: fluidWave2 18s ease-in-out infinite;
+        }
+        .animate-fluid-3 {
+          animation: fluidWave3 12s ease-in-out infinite;
+        }
       `}</style>
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div
-          className={`absolute -top-32 left-1/4 w-[520px] h-[520px] rounded-full blur-[130px] transition-opacity duration-700 ${
-            isDark ? "bg-blue-600/20 opacity-100" : "bg-blue-400/25 opacity-80"
+          className={`absolute -top-32 left-1/4 w-[580px] h-[580px] rounded-full blur-[140px] opacity-70 animate-fluid-1 transition-colors duration-700 ${
+            isDark ? "bg-blue-600/30" : "bg-blue-400/40"
           }`}
         />
         <div
-          className={`absolute top-1/3 -left-24 w-[420px] h-[420px] rounded-full blur-[120px] transition-opacity duration-700 ${
-            isDark ? "bg-cyan-500/15 opacity-90" : "bg-sky-300/30 opacity-75"
+          className={`absolute top-1/3 -left-24 w-[500px] h-[500px] rounded-full blur-[130px] opacity-65 animate-fluid-2 transition-colors duration-700 ${
+            isDark ? "bg-cyan-500/25" : "bg-sky-400/40"
           }`}
         />
         <div
-          className={`absolute bottom-0 right-1/4 w-[550px] h-[550px] rounded-full blur-[140px] transition-opacity duration-700 ${
-            isDark ? "bg-indigo-600/20 opacity-100" : "bg-indigo-300/25 opacity-80"
+          className={`absolute bottom-0 right-1/4 w-[620px] h-[620px] rounded-full blur-[150px] opacity-70 animate-fluid-3 transition-colors duration-700 ${
+            isDark ? "bg-indigo-600/30" : "bg-indigo-300/40"
           }`}
         />
         {/* Perspective Cyber Grid ở góc dưới */}
@@ -1339,8 +1540,17 @@ export default function App() {
 
       {/* TOP NAVIGATION BAR (Chuẩn Lucky Swaps Header) */}
       <header className="relative z-20 max-w-7xl mx-auto px-4 sm:px-8 pt-6 pb-2 flex items-center justify-between">
-        {/* Góc trái: Logo phát sáng + Nút mở Mục lục */}
+        {/* Góc trái: Nút quay lại Menu chọn môn + Logo phát sáng + Nút mở Mục lục */}
         <div className="flex items-center space-x-3">
+          <button
+            onClick={() => setCurrentSubject(null)}
+            className={`px-3.5 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer ${glassCard} hover:border-blue-400/50 flex items-center space-x-1.5`}
+            title="Quay lại menu chọn môn học"
+          >
+            <ChevronLeft className="w-4 h-4 text-blue-400" />
+            <span className="hidden sm:inline">Đổi môn</span>
+          </button>
+
           <button
             onClick={() => setDrawerOpen(true)}
             className={`flex items-center space-x-2.5 px-3.5 py-2 rounded-2xl transition-all cursor-pointer group ${glassCard} hover:border-blue-400/50`}
@@ -1354,24 +1564,40 @@ export default function App() {
             </span>
           </button>
 
-          {/* Chuyển nhanh 4 khối lớp */}
-          <div className={`hidden md:flex items-center p-1 rounded-2xl ${glassCard}`}>
-            {Object.keys(curriculum).map(gKey => {
-              const active = selectedGrade === gKey;
-              return (
-                <button
-                  key={gKey}
-                  onClick={() => handleSelectGrade(gKey)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    active
-                      ? "bg-gradient-to-r from-blue-600/90 to-cyan-500/90 text-white shadow-[0_0_16px_rgba(59,130,246,0.6)]"
-                      : `${mutedText} hover:text-blue-400`
-                  }`}
-                >
-                  {curriculum[gKey].name.replace("Khối ", "")}
-                </button>
-              );
-            })}
+          {/* Chọn khối gọn gàng với nút mở rộng */}
+          <div className="relative">
+            <button
+              onClick={() => setGradeDropdownOpen(!gradeDropdownOpen)}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer ${glassCard} hover:border-blue-400/50`}
+            >
+              <span className="text-cyan-400 font-extrabold">{currentGradeObj.name}</span>
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${gradeDropdownOpen ? "rotate-180" : ""}`} />
+            </button>
+
+            {gradeDropdownOpen && (
+              <div className={`absolute top-12 left-0 z-50 w-44 rounded-2xl p-1.5 space-y-1 ${glassCard} shadow-2xl border border-blue-500/30`}>
+                {Object.keys(curriculum).map(gKey => {
+                  const active = selectedGrade === gKey;
+                  return (
+                    <button
+                      key={gKey}
+                      onClick={() => {
+                        handleSelectGrade(gKey);
+                        setGradeDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-between ${
+                        active
+                          ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-[0_0_15px_rgba(59,130,246,0.5)]"
+                          : "hover:bg-white/10"
+                      }`}
+                    >
+                      <span>{curriculum[gKey].name}</span>
+                      {active && <Check className="w-3.5 h-3.5" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 
@@ -1749,14 +1975,14 @@ export default function App() {
               onClick={() =>
                 setActiveTab(activeTab === "theory" ? "quiz" : "theory")
               }
-              className={`w-9 h-9 rounded-full flex items-center justify-center border transition-transform hover:rotate-180 cursor-pointer ${
+              className={`w-9 h-9 rounded-full flex items-center justify-center border transition-transform hover:scale-110 cursor-pointer ${
                 isDark
                   ? "bg-[#161c2e] border-white/15 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.4)]"
                   : "bg-white border-blue-200 text-blue-600 shadow-md"
               }`}
               title="Chuyển nhanh giữa Lý thuyết và Bài kiểm tra"
             >
-              <ArrowUpDown className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
 
