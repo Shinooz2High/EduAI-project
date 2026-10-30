@@ -1283,6 +1283,15 @@ export default function App() {
 
         {/* HEADER MENU CHỌN MÔN */}
         <div className="relative z-10 text-center max-w-2xl mx-auto mb-10 space-y-3">
+          {/* LOGO DÙNG TRỰC TIẾP ẢNH TỪ LINK */}
+          <div className="w-20 h-20 mx-auto rounded-3xl p-0.5 shadow-[0_0_35px_rgba(59,130,246,0.6)] flex items-center justify-center relative overflow-hidden group">
+            <img 
+              src="https://i.pinimg.com/1200x/13/06/f5/1306f536e31c22f3cce16fb047a44dc0.jpg" 
+              alt="EduAI Logo" 
+              className="w-full h-full object-cover rounded-[22px]"
+            />
+          </div>
+
           <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-blue-500/15 border border-blue-400/30 text-blue-400 text-xs font-bold shadow-[0_0_20px_rgba(59,130,246,0.3)]">
             <Sparkles className="w-3.5 h-3.5" />
             <span>EduAI Hub • Nền tảng học tập thông minh</span>
@@ -1555,8 +1564,13 @@ export default function App() {
             onClick={() => setDrawerOpen(true)}
             className={`flex items-center space-x-2.5 px-3.5 py-2 rounded-2xl transition-all cursor-pointer group ${glassCard} hover:border-blue-400/50`}
           >
-            <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-400 flex items-center justify-center shadow-[0_0_18px_rgba(59,130,246,0.8)] group-hover:scale-105 transition-transform">
-              <Sparkles className="w-4 h-4 text-white" />
+            {/* LOGO MINI TRÊN HEADER CHÍNH DÙNG ẢNH TRỰC TIẾP */}
+            <div className="w-7 h-7 rounded-xl flex items-center justify-center shadow-[0_0_18px_rgba(59,130,246,0.8)] group-hover:scale-105 transition-transform overflow-hidden relative">
+              <img 
+                src="https://i.pinimg.com/1200x/13/06/f5/1306f536e31c22f3cce16fb047a44dc0.jpg" 
+                alt="EduAI Logo" 
+                className="w-full h-full object-cover rounded-[10px]"
+              />
             </div>
             <span className="font-extrabold text-sm tracking-tight">EduAI</span>
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-400/30 font-semibold">
