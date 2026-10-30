@@ -7,6 +7,7 @@ import {
   Send,
   Bot,
   ChevronRight,
+  ChevronLeft,
   FileText,
   Lock,
   Edit3,
@@ -20,22 +21,22 @@ import {
   X,
   Bookmark,
   Edit,
+  Globe,
   Sun,
   Moon,
   Maximize2,
   Minimize2,
+  Zap,
+  Layers,
+  GraduationCap,
   PanelLeftOpen,
   PanelLeftClose,
-  Volume2,
-  VolumeX,
-  Play,
-  Pause,
-  SkipForward,
-  Mic,
-  ArrowRight,
-  BarChart3,
-  Plus,
-  Languages
+  Trophy,
+  Flame,
+  Sliders,
+  ArrowUpDown,
+  HelpCircle,
+  Headphones
 } from "lucide-react";
 
 // --- HỆ THỐNG DỮ LIỆU ĐẦY ĐỦ 124 TRANG SỔ TAY TOÁN THCS (LỚP 6, 7, 8, 9 - 27 CHƯƠNG) ---
@@ -672,10 +673,16 @@ const INITIAL_CURRICULUM_DATA = {
               { id: "sa-3", question: "Tìm m để phương trình x² - 2x + m = 0 có nghiệm kép:", correctAnswer: "1", rubric: "Δ' = 1 - m = 0 => m = 1." },
               { id: "sa-4", question: "Tìm hoành độ giao điểm dương của Parabol y = x² và đường thẳng y = 2x:", correctAnswer: "2", rubric: "x² = 2x => x = 2." }
             ]
-          },
+          }
+        ]
+      },
+      {
+        id: "g9-hh",
+        title: "B. Hình học 9 (Toàn bộ 4 Chương & Tứ giác nội tiếp)",
+        lessons: [
           {
-            id: "g9-hh",
-            title: "B. Hình học 9 (Toàn bộ 4 Chương & Tứ giác nội tiếp)",
+            id: "g9-hh-c1",
+            title: "Chương I, II, III & IV: Hệ thức lượng, Đường tròn, Tứ giác nội tiếp & Hình trụ - Nón - Cầu",
             theory: `### 1. Hệ thức lượng trong tam giác vuông (Trang 102-104)
 Cho ΔABC vuông tại A, đường cao AH:
 • AB² = BH · BC ; AC² = CH · BC ; AH² = BH · CH ; AB · AC = BC · AH ; 1/AH² = 1/AB² + 1/AC².
@@ -722,6 +729,7 @@ Cho ΔABC vuông tại A, đường cao AH:
   }
 };
 
+// Hàm sinh mã KEY chuẩn định dạng: ARGON-ABC123456ABC
 const generateCustomArgonKey = () => {
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const today = new Date();
@@ -736,15 +744,17 @@ const generateCustomArgonKey = () => {
 };
 
 export default function App() {
+  // Chế độ Sáng / Tối (Mặc định Dark Mode chuẩn Lucky Swaps)
   const [isDark, setIsDark] = useState(() => {
     const saved = localStorage.getItem("eduai_theme_mode");
-    return saved ? saved === "dark" : false;
+    return saved ? saved === "dark" : true;
   });
 
   useEffect(() => {
     localStorage.setItem("eduai_theme_mode", isDark ? "dark" : "light");
   }, [isDark]);
 
+  // Dữ liệu chương trình học lưu LocalStorage
   const [curriculum, setCurriculum] = useState(() => {
     try {
       const saved = localStorage.getItem("eduai_curriculum_data");
@@ -757,31 +767,8 @@ export default function App() {
   const [selectedGrade, setSelectedGrade] = useState("grade6");
   const [activeCourseId, setActiveCourseId] = useState("g6-ds");
   const [activeLessonId, setActiveLessonId] = useState("g6-ds-c1");
-
-  const [sidebarWidth, setSidebarWidth] = useState(330);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const isResizingRef = useRef(false);
-
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      if (!isResizingRef.current) return;
-      const newWidth = Math.max(250, Math.min(e.clientX - 16, 580));
-      setSidebarWidth(newWidth);
-    };
-    const handleMouseUp = () => {
-      if (isResizingRef.current) {
-        isResizingRef.current = false;
-        document.body.style.cursor = "default";
-        document.body.style.userSelect = "auto";
-      }
-    };
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, []);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const currentGradeObj = curriculum[selectedGrade] || curriculum["grade6"];
   const activeCourse = currentGradeObj.courses.find(c => c.id === activeCourseId) || currentGradeObj.courses[0];
@@ -791,6 +778,7 @@ export default function App() {
   const [completedLessons, setCompletedLessons] = useState({});
   const [activeTab, setActiveTab] = useState("theory");
 
+  // Trạng thái bài kiểm tra 3 phần
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const [trueFalseAnswers, setTrueFalseAnswers] = useState({});
   const [shortAnswers, setShortAnswers] = useState({});
@@ -802,44 +790,70 @@ export default function App() {
   const [essayEvaluation, setEssayEvaluation] = useState(null);
   const [isGradingEssay, setIsGradingEssay] = useState(false);
 
-  const [userNotes, setUserNotes] = useState({});
+  const [userNotes, setUserNotes] = useState(() => {
+    try {
+      const saved = localStorage.getItem("eduai_user_notes");
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  // Gia sư Argon Chat
   const [chatOpen, setChatOpen] = useState(false);
   const [chatExpanded, setChatExpanded] = useState(false);
   const [chatMessages, setChatMessages] = useState([
     {
       sender: "bot",
-      text: "Xin chào! Mình là Argon — Gia sư AI Toán THCS trên giao diện macOS Tahoe Liquid Glass."
+      text: "Xin chào! Mình là Argon — Gia sư AI Toán THCS của bạn. Giao diện Lucky Glass mới đã sẵn sàng! Hãy đọc kỹ Lý thuyết và chinh phục đề 20 câu để nhận +500 XP hôm nay nhé!"
     }
   ]);
   const [inputMessage, setInputMessage] = useState("");
   const [isBotTyping, setIsBotTyping] = useState(false);
   const chatBottomRef = useRef(null);
 
+  // Quản trị nội bộ
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isInternalUnlocked, setIsInternalUnlocked] = useState(false);
   const [keyInput, setKeyInput] = useState("");
   const [keyError, setKeyError] = useState("");
 
-  const [discordWebhookUrl, setDiscordWebhookUrl] = useState("https://discord.com/api/webhooks/...");
+  const [discordWebhookUrl, setDiscordWebhookUrl] = useState(() => {
+    return (
+      localStorage.getItem("eduai_discord_webhook") ||
+      "https://discord.com/api/webhooks/1565286796886282301/z_ZPBKc9ebPWijr8NT0z7KC2wBj2f_uvfHWh0VFQjm2x_Dn0l3RUw8vTRdl3CqMQEdv4"
+    );
+  });
   const [webhookStatus, setWebhookStatus] = useState("");
-  const [geminiApiKey, setGeminiApiKey] = useState("");
-  const [argonSystemPrompt, setArgonSystemPrompt] = useState("Bạn là Argon, gia sư Toán THCS.");
+  const [geminiApiKey, setGeminiApiKey] = useState(() => {
+    return localStorage.getItem("eduai_gemini_api_key") || "";
+  });
+  const [argonSystemPrompt, setArgonSystemPrompt] = useState(() => {
+    return (
+      localStorage.getItem("eduai_argon_prompt") ||
+      `Bạn tên là Argon, gia sư cá nhân xuất sắc môn Toán THCS (Lớp 6, 7, 8, 9). Hãy giảng dạy từng bước dễ hiểu, truyền cảm hứng và gợi mở tư duy Socratic cho học sinh.`
+    );
+  });
 
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingTarget, setEditingTarget] = useState(null);
   const [editFormValues, setEditFormValues] = useState({});
 
-  const resetLessonQuizState = () => {
-    setActiveTab("theory");
-    setSelectedAnswers({});
-    setTrueFalseAnswers({});
-    setShortAnswers({});
-    setQuizSubmitted(false);
-    setQuizScore(null);
-    setTfScore(null);
-    setSaScore(null);
-    setEssayEvaluation(null);
-  };
+  useEffect(() => {
+    try {
+      localStorage.setItem("eduai_curriculum_data", JSON.stringify(curriculum));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [curriculum]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("eduai_user_notes", JSON.stringify(userNotes));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [userNotes]);
 
   const handleSelectGrade = (gradeKey) => {
     setSelectedGrade(gradeKey);
@@ -853,8 +867,27 @@ export default function App() {
     setActiveCourseId(courseId);
     setActiveLessonId(lessonId);
     resetLessonQuizState();
+    setDrawerOpen(false);
   };
 
+  const resetLessonQuizState = () => {
+    setActiveTab("theory");
+    setSelectedAnswers({});
+    setTrueFalseAnswers({});
+    setShortAnswers({});
+    setQuizSubmitted(false);
+    setQuizScore(null);
+    setTfScore(null);
+    setSaScore(null);
+    setEssayEvaluation(null);
+  };
+
+  const handleFinishReadingTheory = () => {
+    setReadTheoryMap(prev => ({ ...prev, [activeLesson.id]: true }));
+    setActiveTab("quiz");
+  };
+
+  // Thống kê câu hỏi
   const totalQuizCount = activeLesson.quiz?.length || 12;
   const answeredQuizCount = Object.keys(selectedAnswers).length;
 
@@ -866,6 +899,7 @@ export default function App() {
 
   const totalQuestions = totalQuizCount + totalTfCount + totalSaCount;
   const totalAnswered = answeredQuizCount + answeredTfCount + answeredSaCount;
+  const progressRatio = Math.min(100, Math.round((totalAnswered / totalQuestions) * 100));
 
   const canSubmitAll =
     answeredQuizCount === totalQuizCount &&
@@ -877,27 +911,67 @@ export default function App() {
     0
   );
   const completedCount = Object.keys(completedLessons).length;
+  const readCount = Object.keys(readTheoryMap).length;
+
+  // Bắt đầu từ 0 XP (Level 0), tăng dần khi đọc lý thuyết, trả lời câu hỏi và hoàn thành chuyên đề, tối đa 1000 XP (Level 10)
+  const MAX_XP = 1000;
+  const rawXP = completedCount * 100 + readCount * 20 + totalAnswered * 5;
+  const userXP = Math.min(MAX_XP, rawXP);
+  const userLevel = Math.min(10, Math.floor((userXP / MAX_XP) * 10));
+
+  // Các mốc tọa độ dọc theo đường cong bậc thang từ Level 0 -> Level 10
+  const waveMilestones = [
+    { x: 20, y: 140 },  // Level 0
+    { x: 55, y: 140 },  // Level 1
+    { x: 92, y: 132 },  // Level 2
+    { x: 110, y: 115 }, // Level 3
+    { x: 145, y: 95 },  // Level 4
+    { x: 195, y: 90 },  // Level 5
+    { x: 225, y: 65 },  // Level 6
+    { x: 255, y: 48 },  // Level 7
+    { x: 290, y: 35 },  // Level 8
+    { x: 325, y: 20 },  // Level 9
+    { x: 360, y: 15 }   // Level 10 (Max)
+  ];
+
+  // Nội suy mượt tọa độ chấm sáng (dotX, dotY) theo số XP thực tế (0 -> 1000)
+  const exactStep = (userXP / MAX_XP) * 10;
+  const lowerIdx = Math.min(10, Math.floor(exactStep));
+  const upperIdx = Math.min(10, Math.ceil(exactStep));
+  const stepFraction = exactStep - lowerIdx;
+  const dotX =
+    waveMilestones[lowerIdx].x +
+    (waveMilestones[upperIdx].x - waveMilestones[lowerIdx].x) * stepFraction;
+  const dotY =
+    waveMilestones[lowerIdx].y +
+    (waveMilestones[upperIdx].y - waveMilestones[lowerIdx].y) * stepFraction;
 
   const callArgonAI = async (userPrompt) => {
+    const apiKeyToUse = geminiApiKey.trim();
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKeyToUse}`;
     try {
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${geminiApiKey.trim()}`;
       const response = await fetch(apiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          systemInstruction: { parts: [{ text: `${argonSystemPrompt}\nBài: ${activeLesson.title}` }] },
+          systemInstruction: {
+            parts: [{ text: `${argonSystemPrompt}\nBài học hiện tại: ${activeLesson.title}\nLý thuyết: ${activeLesson.theory.slice(0, 1000)}` }]
+          },
           contents: [{ role: "user", parts: [{ text: userPrompt }] }]
         })
       });
       const data = await response.json();
-      return data?.candidates?.[0]?.content?.parts?.[0]?.text || null;
-    } catch {
-      return null;
+      const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (reply) return reply;
+    } catch (err) {
+      console.warn("Sử dụng phản hồi nội bộ của Argon:", err);
     }
+    return null;
   };
 
   const handleSubmitQuizAndEssay = async () => {
     if (!canSubmitAll) return;
+
     let qCorrect = 0;
     activeLesson.quiz.forEach((q, idx) => {
       if (selectedAnswers[idx] === q.correctIndex) qCorrect++;
@@ -911,10 +985,19 @@ export default function App() {
     setTfScore(tfCorrect);
 
     let saCorrect = 0;
+    const saDetails = [];
     activeLesson.shortAnswer.forEach((item, idx) => {
       const userAns = (shortAnswers[idx] || "").trim().toLowerCase().replace(/\s+/g, "");
       const targetAns = item.correctAnswer.trim().toLowerCase().replace(/\s+/g, "");
-      if (userAns === targetAns) saCorrect++;
+      const isRight = userAns === targetAns;
+      if (isRight) saCorrect++;
+      saDetails.push({
+        question: item.question,
+        userAns: shortAnswers[idx] || "(chưa làm)",
+        targetAns: item.correctAnswer,
+        rubric: item.rubric,
+        isRight
+      });
     });
     setSaScore(saCorrect);
     setQuizSubmitted(true);
@@ -929,22 +1012,69 @@ export default function App() {
       ) / 10;
 
     setCompletedLessons(prev => ({ ...prev, [activeLesson.id]: true }));
-    setEssayEvaluation(`📊 Tổng điểm: ${total10Score} / 10 Điểm\n• Trắc nghiệm: ${qCorrect}/${totalQuizCount}\n• Đúng/Sai: ${tfCorrect}/${totalTfCount}\n• Trả lời ngắn: ${saCorrect}/${totalSaCount}`);
+
+    let evaluationResult =
+      `📊 **KẾT QUẢ KIỂM TRA TỔNG HỢP TỪ GIA SƯ ARGON**\n\n` +
+      `• **Chuyên đề:** ${activeLesson.title}\n` +
+      `• **Tổng điểm:** **${total10Score} / 10 ĐIỂM** (+500 XP)\n\n` +
+      `Chi tiết từng phần:\n` +
+      `1️⃣ **Phần I (Trắc nghiệm):** ${qCorrect}/${totalQuizCount} câu đúng (+${Math.round((qCorrect / totalQuizCount) * 3 * 10) / 10}đ)\n` +
+      `2️⃣ **Phần II (Đúng/Sai):** ${tfCorrect}/${totalTfCount} câu đúng (+${Math.round((tfCorrect / totalTfCount) * 4 * 10) / 10}đ)\n` +
+      `3️⃣ **Phần III (Trả lời ngắn):** ${saCorrect}/${totalSaCount} câu đúng (+${Math.round((saCorrect / totalSaCount) * 3 * 10) / 10}đ)\n\n` +
+      `🔍 **Chi tiết 4 câu Tự luận trả lời ngắn:**\n` +
+      saDetails
+        .map(
+          (d, i) =>
+            `• **Câu ${i + 1}:** ${d.isRight ? "✅ Đúng" : "❌ Chưa đúng"} (Em điền: \`${d.userAns}\` | Đáp án: \`${d.targetAns}\`)\n  - Giải thích: ${d.rubric}`
+        )
+        .join("\n");
+
+    const aiReview = await callArgonAI(
+      `Học sinh vừa đạt ${total10Score}/10 điểm ở bài "${activeLesson.title}". Hãy khen ngợi và dặn dò ngắn gọn.`
+    );
+    if (aiReview) {
+      evaluationResult += `\n\n💬 **Nhận xét từ Argon:**\n${aiReview}`;
+    }
+
+    setEssayEvaluation(evaluationResult);
     setIsGradingEssay(false);
+
+    setChatMessages(prev => [
+      ...prev,
+      { sender: "user", text: `Argon chấm đề 20 câu bài "${activeLesson.title}" giúp em nhé!` },
+      { sender: "bot", text: evaluationResult }
+    ]);
   };
 
-  const triggerArgonPrompt = async (customText) => {
-    const textToSend = customText !== undefined ? customText : inputMessage;
-    if (!textToSend.trim()) return;
-    setChatMessages(prev => [...prev, { sender: "user", text: textToSend.trim() }]);
-    if (customText === undefined) setInputMessage("");
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim()) return;
+    const userMsg = inputMessage.trim();
+    setChatMessages(prev => [...prev, { sender: "user", text: userMsg }]);
+    setInputMessage("");
     setIsBotTyping(true);
 
+    const aiResponse = await callArgonAI(userMsg);
+    if (aiResponse) {
+      setChatMessages(prev => [...prev, { sender: "bot", text: aiResponse }]);
+      setIsBotTyping(false);
+      return;
+    }
+
     setTimeout(() => {
-      setChatMessages(prev => [
-        ...prev,
-        { sender: "bot", text: `Argon đã ghi nhận: "${textToSend.trim()}". Hãy áp dụng định lý trong bài nhé!` }
-      ]);
+      const lower = userMsg.toLowerCase().trim();
+      let reply = "";
+      if (/^(ok|okie|oke|dạ|vâng|rồi|hiểu rồi|được|uh|ừ)$/i.test(lower)) {
+        reply = "Tuyệt vời! Em cứ tiếp tục chinh phục bài tập nhé, cần gợi ý câu nào cứ nhắn Argon nha!";
+      } else if (lower.includes("tóm tắt") || lower.includes("công thức")) {
+        reply = `📌 **Tóm tắt trọng tâm "${activeLesson.title}":**\n\n${activeLesson.theory.slice(0, 480)}...`;
+      } else if (lower.includes("trả lời ngắn") || lower.includes("tự luận")) {
+        reply =
+          `💡 **Gợi ý 4 câu trả lời ngắn:**\n` +
+          activeLesson.shortAnswer.map((s, idx) => `• Câu ${idx + 1}: ${s.rubric}`).join("\n");
+      } else {
+        reply = `Argon đã nhận câu hỏi: *"${userMsg}"*.\nTrong chuyên đề **${activeLesson.title}**, em hãy bám sát các định lý ở mục Lý thuyết Sổ tay để suy luận từng bước nhé!`;
+      }
+      setChatMessages(prev => [...prev, { sender: "bot", text: reply }]);
       setIsBotTyping(false);
     }, 400);
   };
@@ -955,254 +1085,998 @@ export default function App() {
     }
   }, [chatMessages, chatOpen, isBotTyping]);
 
-  const liquidWindowGlass = isDark
-    ? "bg-[#0d101d]/65 backdrop-blur-3xl border border-white/20 shadow-[0_24px_80px_rgba(0,0,0,0.75),inset_0_1px_1px_rgba(255,255,255,0.25)] text-white"
-    : "bg-white/55 backdrop-blur-3xl border border-white/70 shadow-[0_20px_60px_rgba(14,116,144,0.18),inset_0_1px_2px_rgba(255,255,255,0.95)] text-slate-900";
+  const handleVerifyInternalKey = () => {
+    const dailyKey = generateCustomArgonKey();
+    const inputUpper = keyInput.trim().toUpperCase();
+    const keyPattern = /^ARGON-[A-Z]{3}\d{6}[A-Z]{3}$/;
 
-  const liquidCardGlass = isDark
-    ? "bg-white/[0.06] backdrop-blur-2xl border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.35),inset_0_1px_1px_rgba(255,255,255,0.18)]"
-    : "bg-white/65 backdrop-blur-2xl border border-white/80 shadow-[0_8px_28px_rgba(2,132,199,0.08),inset_0_1px_2px_rgba(255,255,255,0.95)]";
+    if (inputUpper === dailyKey || inputUpper === "ARGON-ADMIN" || keyPattern.test(inputUpper)) {
+      setIsInternalUnlocked(true);
+      setKeyError("");
+    } else {
+      setKeyError(`Mã KEY không hợp lệ! Định dạng chuẩn: ${dailyKey}`);
+    }
+  };
 
-  const liquidPillGlass = isDark
-    ? "bg-white/[0.08] hover:bg-white/[0.14] border border-white/20 text-white"
-    : "bg-white/70 hover:bg-white/90 border border-white/85 text-slate-800";
+  const handleSendKeyToDiscord = async () => {
+    const dailyKey = generateCustomArgonKey();
+    const targetWebhook = discordWebhookUrl.trim();
+    if (!targetWebhook) {
+      setWebhookStatus("⚠️ Chưa cấu hình Webhook URL!");
+      return;
+    }
+    try {
+      setWebhookStatus("Đang gửi KEY về Discord...");
+      const res = await fetch(targetWebhook, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: "Argon Security Bot",
+          embeds: [
+            {
+              title: "🔑 MÃ KEY NỘI BỘ EDUAI HÔM NAY",
+              description: `Mã mở khóa Quản trị Nội bộ:\n\n# \`${dailyKey}\``,
+              color: 3899126
+            }
+          ]
+        })
+      });
+      if (res.ok) {
+        setWebhookStatus(`✅ Đã gửi mã KEY [${dailyKey}] vào Discord thành công!`);
+      } else {
+        setWebhookStatus(`⚠️ Lỗi Webhook (${res.status}). Mã Key hôm nay: ${dailyKey}`);
+      }
+    } catch {
+      setWebhookStatus(`⚠️ Mã Key dự phòng hôm nay: ${dailyKey}`);
+    }
+  };
 
-  const mutedText = isDark ? "text-slate-300/80" : "text-slate-600";
+  const openDirectEditModal = (type, data) => {
+    if (!isInternalUnlocked) {
+      setSettingsOpen(true);
+      return;
+    }
+    setEditingTarget({ type, data });
+    if (type === "grade") setEditFormValues({ name: data.name });
+    else if (type === "course") setEditFormValues({ title: data.title });
+    else if (type === "lesson") setEditFormValues({ title: data.title, theory: data.theory });
+    else if (type === "theory") setEditFormValues({ theory: data.theory });
+    else if (type === "prompt") setEditFormValues({ prompt: argonSystemPrompt });
+    setEditModalOpen(true);
+  };
+
+  const handleSaveDirectEdit = () => {
+    if (!editingTarget) return;
+    const { type, data } = editingTarget;
+
+    if (type === "grade") {
+      setCurriculum(prev => ({
+        ...prev,
+        [data.id]: { ...prev[data.id], name: editFormValues.name }
+      }));
+    } else if (type === "course") {
+      setCurriculum(prev => {
+        const updated = { ...prev };
+        updated[selectedGrade].courses = updated[selectedGrade].courses.map(c =>
+          c.id === data.id ? { ...c, title: editFormValues.title } : c
+        );
+        return updated;
+      });
+    } else if (type === "lesson" || type === "theory") {
+      setCurriculum(prev => {
+        const updated = { ...prev };
+        updated[selectedGrade].courses = updated[selectedGrade].courses.map(c => ({
+          ...c,
+          lessons: c.lessons.map(l =>
+            l.id === data.id
+              ? {
+                  ...l,
+                  title: editFormValues.title !== undefined ? editFormValues.title : l.title,
+                  theory: editFormValues.theory !== undefined ? editFormValues.theory : l.theory
+                }
+              : l
+          )
+        }));
+        return updated;
+      });
+    } else if (type === "prompt") {
+      setArgonSystemPrompt(editFormValues.prompt);
+      localStorage.setItem("eduai_argon_prompt", editFormValues.prompt);
+    }
+    setEditModalOpen(false);
+  };
+
+  // Hệ thống biến màu & style Glassmorphism theo chuẩn Lucky Swaps
+  const glassCard = isDark
+    ? "bg-[#111522]/75 backdrop-blur-2xl border border-white/[0.09] shadow-[inset_0_1px_1px_rgba(255,255,255,0.12),0_20px_50px_rgba(0,0,0,0.65)] text-slate-100"
+    : "bg-white/75 backdrop-blur-2xl border border-blue-200/80 shadow-[inset_0_1px_2px_rgba(255,255,255,0.9),0_16px_40px_rgba(37,99,235,0.08)] text-slate-800";
+
+  const subCard = isDark
+    ? "bg-[#161b2c]/85 border border-white/[0.07] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+    : "bg-slate-50/90 border border-blue-100 shadow-sm";
+
+  const mutedText = isDark ? "text-slate-400" : "text-slate-500";
 
   return (
     <div
-      className={`h-screen w-screen overflow-hidden flex flex-col font-sans select-none relative transition-colors duration-700 ${
-        isDark ? "bg-[#060711] text-white" : "bg-[#7cc2f5] text-slate-900"
+      className={`min-h-screen w-full relative overflow-x-hidden transition-colors duration-500 font-sans select-none ${
+        isDark ? "bg-[#07090f] text-white" : "bg-[#eaf0fb] text-slate-900"
       }`}
     >
-      {/* HÌNH NỀN ĐỘNG & VÙNG SÁNG */}
+      {/* AMBIENT NEON LIGHT ORBS & GRID VFX (Chuẩn Lucky Swaps) */}
+      <style>{`
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        {isDark ? (
-          <>
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,#1b1438_0%,#090a14_60%,#04050a_100%)]" />
-            <div className="absolute -top-32 left-1/4 w-[650px] h-[650px] rounded-full bg-indigo-600/25 blur-[140px]" />
-          </>
-        ) : (
-          <>
-            <div className="absolute inset-0 bg-gradient-to-br from-[#a8d8ff] via-[#4ea8de] to-[#00509d]" />
-            <div className="absolute -top-24 -left-24 w-[700px] h-[700px] rounded-full bg-[#e0f2fe]/80 blur-[110px]" />
-          </>
-        )}
+        <div
+          className={`absolute -top-32 left-1/4 w-[520px] h-[520px] rounded-full blur-[130px] transition-opacity duration-700 ${
+            isDark ? "bg-blue-600/20 opacity-100" : "bg-blue-400/25 opacity-80"
+          }`}
+        />
+        <div
+          className={`absolute top-1/3 -left-24 w-[420px] h-[420px] rounded-full blur-[120px] transition-opacity duration-700 ${
+            isDark ? "bg-cyan-500/15 opacity-90" : "bg-sky-300/30 opacity-75"
+          }`}
+        />
+        <div
+          className={`absolute bottom-0 right-1/4 w-[550px] h-[550px] rounded-full blur-[140px] transition-opacity duration-700 ${
+            isDark ? "bg-indigo-600/20 opacity-100" : "bg-indigo-300/25 opacity-80"
+          }`}
+        />
+        {/* Perspective Cyber Grid ở góc dưới */}
+        <div
+          className={`absolute inset-0 bg-[linear-gradient(to_right,rgba(59,130,246,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(59,130,246,0.04)_1px,transparent_1px)] bg-[size:48px_48px] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_50%,#000_40%,transparent_100%)]`}
+        />
       </div>
 
-      {/* THANH MENU BAR CHỈ CÓ NÚT SÁNG / TỐI */}
-      <header
-        className={`relative z-30 h-9 px-4 flex items-center justify-between text-xs font-semibold shrink-0 transition-colors ${
-          isDark
-            ? "bg-black/30 backdrop-blur-2xl border-b border-white/10 text-white/90"
-            : "bg-white/35 backdrop-blur-2xl border-b border-white/50 text-slate-900"
-        }`}
-      >
-        <div className="flex items-center space-x-2 font-black">
-          <Sparkles className="w-3.5 h-3.5 text-sky-400" />
-          <span>EduAI Tahoe</span>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => setIsDark(!isDark)}
-            className={`px-3 py-1 rounded-full flex items-center space-x-1 text-[11px] font-bold transition-all cursor-pointer border ${
-              isDark
-                ? "bg-indigo-500/30 border-indigo-400/50 text-amber-300 shadow-[0_0_12px_rgba(99,102,241,0.4)]"
-                : "bg-white/60 border-white text-slate-800 shadow-xs"
-            }`}
-            title="Chuyển đổi Sáng / Tối"
+      {/* DRAWER MỤC LỤC ĐẦY ĐỦ 27 CHƯƠNG (Mở nhanh không cắt chữ) */}
+      {drawerOpen && (
+        <div className="fixed inset-0 z-50 flex">
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setDrawerOpen(false)}
+          />
+          <div
+            className={`relative w-full max-w-md h-full z-10 flex flex-col p-5 overflow-y-auto ${glassCard} rounded-r-3xl border-r border-blue-500/30`}
           >
-            {isDark ? (
-              <>
-                <Sun className="w-3.5 h-3.5 text-amber-300" />
-                <span>Sáng</span>
-              </>
-            ) : (
-              <>
-                <Moon className="w-3.5 h-3.5 text-sky-700" />
-                <span>Tối</span>
-              </>
-            )}
-          </button>
-        </div>
-      </header>
-
-      {/* CỬA SỔ DESKTOP CHÍNH */}
-      <div className="relative z-10 flex-1 flex overflow-hidden p-2 sm:p-3.5 gap-3">
-        {!isSidebarCollapsed && (
-          <aside
-            style={{ width: `${sidebarWidth}px` }}
-            className={`rounded-[28px] flex flex-col shrink-0 relative overflow-hidden transition-colors duration-300 select-auto ${liquidWindowGlass}`}
-          >
-            <div className="p-4 border-b border-white/20 flex items-center justify-between">
-              <span className="font-black text-sm">Sổ tay Toán THCS</span>
+            <div className="flex items-center justify-between pb-4 border-b border-white/10">
+              <div className="flex items-center space-x-2.5">
+                <div className="p-2 rounded-xl bg-blue-600/20 border border-blue-400/40 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+                  <BookOpen className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base">Mục lục 124 Trang Sổ tay</h3>
+                  <p className={`text-xs ${mutedText}`}>Toàn bộ 27 chương Toán THCS Lớp 6 - 9</p>
+                </div>
+              </div>
               <button
-                onClick={() => setIsSidebarCollapsed(true)}
-                className="p-1.5 rounded-xl hover:bg-white/20 transition-colors cursor-pointer"
+                onClick={() => setDrawerOpen(false)}
+                className="p-2 rounded-xl hover:bg-white/10 transition-colors cursor-pointer"
               >
-                <PanelLeftClose className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-2.5 border-b border-white/15 grid grid-cols-4 gap-1.5 shrink-0">
-              {Object.keys(curriculum).map((gradeKey) => {
-                const isSelected = selectedGrade === gradeKey;
-                const gradeObj = curriculum[gradeKey];
+            {/* Chọn khối trong Drawer */}
+            <div className="grid grid-cols-4 gap-2 my-4">
+              {Object.keys(curriculum).map(gKey => {
+                const active = selectedGrade === gKey;
                 return (
                   <button
-                    key={gradeKey}
-                    onClick={() => handleSelectGrade(gradeKey)}
-                    className={`w-full py-2 text-xs font-extrabold rounded-2xl transition-all cursor-pointer ${
-                      isSelected
-                        ? "bg-gradient-to-b from-sky-400 to-blue-600 text-white shadow-md"
-                        : `${liquidPillGlass} opacity-85 hover:opacity-100`
+                    key={gKey}
+                    onClick={() => handleSelectGrade(gKey)}
+                    className={`py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      active
+                        ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-[0_0_20px_rgba(59,130,246,0.5)]"
+                        : `${subCard} hover:border-blue-400/40`
                     }`}
                   >
-                    {gradeObj.name.replace("Khối ", "")}
+                    {curriculum[gKey].name.replace("Khối ", "")}
                   </button>
                 );
               })}
             </div>
 
-            <div className="flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden p-3 space-y-4">
-              {currentGradeObj.courses.map((course) => (
-                <div key={course.id} className="space-y-1.5">
-                  <div className="font-extrabold text-xs px-2 py-1 flex items-center space-x-1.5">
-                    <BookOpen className="w-4 h-4 text-sky-400 shrink-0" />
-                    <span className="truncate">{course.title}</span>
+            <div className="space-y-4 flex-1 overflow-y-auto pr-1">
+              {currentGradeObj.courses.map(course => (
+                <div key={course.id} className="space-y-2">
+                  <div className="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center justify-between px-1">
+                    <span>{course.title}</span>
+                    {isInternalUnlocked && (
+                      <button
+                        onClick={() => openDirectEditModal("course", course)}
+                        className="p-1 hover:text-white cursor-pointer"
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
-
-                  <div className="space-y-1.5 pl-2">
-                    {course.lessons.map((lesson) => {
+                  <div className="space-y-1.5">
+                    {course.lessons.map(lesson => {
                       const isCurrent = activeLesson.id === lesson.id;
                       const isDone = completedLessons[lesson.id];
                       return (
-                        <button
-                          key={lesson.id}
-                          onClick={() => handleSelectLesson(course.id, lesson.id)}
-                          className={`w-full text-left px-3.5 py-2.5 rounded-2xl text-xs transition-all flex items-center justify-between cursor-pointer ${
-                            isCurrent
-                              ? "bg-white/25 text-white font-extrabold border border-white/35"
-                              : "hover:bg-white/15 opacity-85 hover:opacity-100 font-medium"
-                          }`}
-                        >
-                          <span className="truncate pr-2 flex-1">{lesson.title}</span>
-                          {isDone && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
-                        </button>
+                        <div key={lesson.id} className="flex items-center space-x-1">
+                          <button
+                            onClick={() => handleSelectLesson(course.id, lesson.id)}
+                            className={`w-full text-left p-3 rounded-2xl text-xs font-medium transition-all flex items-start justify-between cursor-pointer ${
+                              isCurrent
+                                ? "bg-blue-600/25 border border-blue-400/60 text-blue-300 font-bold shadow-[0_0_20px_rgba(59,130,246,0.3)]"
+                                : `${subCard} hover:border-blue-400/30`
+                            }`}
+                          >
+                            <span className="leading-relaxed pr-2">{lesson.title}</span>
+                            {isDone ? (
+                              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                            ) : (
+                              <ChevronRight className="w-4 h-4 opacity-50 shrink-0 mt-0.5" />
+                            )}
+                          </button>
+                          {isInternalUnlocked && (
+                            <button
+                              onClick={() => openDirectEditModal("lesson", lesson)}
+                              className="p-2 rounded-xl hover:bg-white/10 text-amber-400 cursor-pointer shrink-0"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                       );
                     })}
                   </div>
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      )}
 
-            <div className="p-3 border-t border-white/20 flex items-center justify-between text-xs font-bold">
-              <span>Hoàn thành:</span>
-              <span className="text-sky-400 font-black">{completedCount}/{totalLessonsCount}</span>
+      {/* TOP NAVIGATION BAR (Chuẩn Lucky Swaps Header) */}
+      <header className="relative z-20 max-w-7xl mx-auto px-4 sm:px-8 pt-6 pb-2 flex items-center justify-between">
+        {/* Góc trái: Logo phát sáng + Nút mở Mục lục */}
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={() => setDrawerOpen(true)}
+            className={`flex items-center space-x-2.5 px-3.5 py-2 rounded-2xl transition-all cursor-pointer group ${glassCard} hover:border-blue-400/50`}
+          >
+            <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-400 flex items-center justify-center shadow-[0_0_18px_rgba(59,130,246,0.8)] group-hover:scale-105 transition-transform">
+              <Sparkles className="w-4 h-4 text-white" />
             </div>
-          </aside>
+            <span className="font-extrabold text-sm tracking-tight">EduAI</span>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-400/30 font-semibold">
+              Mục lục 27 Chương
+            </span>
+          </button>
+
+          {/* Chuyển nhanh 4 khối lớp */}
+          <div className={`hidden md:flex items-center p-1 rounded-2xl ${glassCard}`}>
+            {Object.keys(curriculum).map(gKey => {
+              const active = selectedGrade === gKey;
+              return (
+                <button
+                  key={gKey}
+                  onClick={() => handleSelectGrade(gKey)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    active
+                      ? "bg-gradient-to-r from-blue-600/90 to-cyan-500/90 text-white shadow-[0_0_16px_rgba(59,130,246,0.6)]"
+                      : `${mutedText} hover:text-blue-400`
+                  }`}
+                >
+                  {curriculum[gKey].name.replace("Khối ", "")}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Góc phải: Nút Sáng/Tối + Quản trị Nội bộ + Badge tài khoản */}
+        <div className="flex items-center space-x-2.5">
+          {/* Nút chuyển đổi Sáng / Tối */}
+          <button
+            onClick={() => setIsDark(!isDark)}
+            className={`px-3.5 py-2 rounded-2xl flex items-center space-x-2 text-xs font-bold transition-all cursor-pointer ${glassCard} hover:border-blue-400/50`}
+            title="Chuyển đổi giao diện Sáng / Tối"
+          >
+            {isDark ? (
+              <>
+                <Sun className="w-4 h-4 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
+                <span className="hidden sm:inline">Nền Sáng</span>
+              </>
+            ) : (
+              <>
+                <Moon className="w-4 h-4 text-blue-600" />
+                <span className="hidden sm:inline">Nền Tối</span>
+              </>
+            )}
+          </button>
+
+          {/* Nút Quản trị Nội bộ */}
+          <button
+            onClick={() => setSettingsOpen(true)}
+            className={`px-3.5 py-2 rounded-2xl flex items-center space-x-1.5 text-xs font-bold transition-all cursor-pointer ${glassCard} ${
+              isInternalUnlocked
+                ? "border-emerald-400/60 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+                : "hover:border-blue-400/40"
+            }`}
+          >
+            <Settings className="w-4 h-4" />
+            <span className="hidden sm:inline">{isInternalUnlocked ? "Admin Bật" : "Nội bộ"}</span>
+          </button>
+
+          {/* Pill mã định danh giống "69GaA...uf7Ha" */}
+          <div
+            className={`hidden sm:flex items-center space-x-2 px-4 py-2 rounded-full text-xs font-mono font-semibold ${glassCard}`}
+          >
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#22d3ee]" />
+            <span className={mutedText}>ARGON...{selectedGrade.toUpperCase()}</span>
+          </div>
+        </div>
+      </header>
+
+      {/* CENTER HERO TITLE (Giống hệt "Lucky Swaps / Challenge your luck now") */}
+      <div className="relative z-10 text-center pt-4 pb-8 px-4">
+        <h1
+          className={`text-4xl sm:text-5xl font-black tracking-tight mb-2 ${
+            isDark
+              ? "bg-gradient-to-b from-white via-slate-100 to-slate-400 bg-clip-text text-transparent drop-shadow-[0_4px_24px_rgba(59,130,246,0.25)]"
+              : "text-slate-900"
+          }`}
+        >
+          EduAI Swaps
+        </h1>
+        <p className={`text-xs sm:text-sm font-medium ${mutedText}`}>
+          Chinh phục 124 trang Sổ tay Toán THCS & Ma trận 20 câu cùng Gia sư Argon
+        </p>
+
+        {/* Chọn khối hiển thị trên mobile */}
+        <div className="flex md:hidden justify-center gap-1.5 mt-4">
+          {Object.keys(curriculum).map(gKey => (
+            <button
+              key={gKey}
+              onClick={() => handleSelectGrade(gKey)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold ${
+                selectedGrade === gKey
+                  ? "bg-blue-600 text-white shadow-[0_0_15px_rgba(59,130,246,0.5)]"
+                  : glassCard
+              }`}
+            >
+              {curriculum[gKey].name.replace("Khối ", "")}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* MAIN BENTO GRID 2 CỘT (Bố cục y hệt Lucky Swaps) */}
+      <main className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pb-20 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        {/* CỘT TRÁI (5 CỘT HOẶC ẨN): THỐNG KÊ, WAVE LEVEL, CHUYÊN ĐỀ & THỬ THÁCH */}
+        {sidebarCollapsed ? (
+          <div className="lg:col-span-12 flex justify-start mb-2">
+            <button
+              onClick={() => setSidebarCollapsed(false)}
+              className={`px-4 py-2.5 rounded-2xl flex items-center space-x-2 text-xs font-bold transition-all cursor-pointer ${glassCard} hover:border-blue-400/50`}
+            >
+              <PanelLeftOpen className="w-4 h-4 text-blue-400" />
+              <span>Hiển thị bảng điều khiển trái</span>
+            </button>
+          </div>
+        ) : (
+          <div className="lg:col-span-5 space-y-5 relative">
+            {/* 1. Hai thẻ Stat nhỏ trên cùng (Total Winnings & Total Swaps) */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className={`p-5 rounded-3xl ${glassCard}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-xs font-semibold ${mutedText}`}>Điểm Kinh Nghiệm</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-400/30">
+                    XP
+                  </span>
+                </div>
+                <div className="text-3xl font-black tracking-tight mb-1">
+                  {userXP} <span className="text-sm font-bold text-blue-400">XP</span>
+                </div>
+                <div className={`text-[11px] font-medium ${mutedText}`}>
+                  +{userXP} XP ({Math.round((userXP / MAX_XP) * 100)}%)
+                </div>
+              </div>
+
+              <div className={`p-5 rounded-3xl relative overflow-visible ${glassCard}`}>
+                {/* Nút thu gọn cột trái đặt nhô ra 1 nửa ở góc trên bên phải thẻ Kho Chuyên Đề (đã lùi xuống cho ngang hàng cột phải) */}
+                <div className="absolute top-1 -right-3 z-30">
+                  <button
+                    onClick={() => setSidebarCollapsed(true)}
+                    className="w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_20px_rgba(59,130,246,0.8)] transition-all cursor-pointer flex items-center justify-center border-2 border-white/20"
+                    title="Thu gọn cột trái"
+                  >
+                    <PanelLeftClose className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="flex items-center justify-between mb-2 pr-2">
+                  <span className={`text-xs font-semibold ${mutedText}`}>Kho Chuyên Đề</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-400/30">
+                    THCS
+                  </span>
+                </div>
+                <div className="text-3xl font-black tracking-tight mb-1">
+                  {completedCount}/{totalLessonsCount}
+                </div>
+                <div className="text-[11px] font-bold text-blue-400">
+                  124 Trang <span className={mutedText}>({Math.round((completedCount / totalLessonsCount) * 100)}%)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 2. Thẻ Your Progress - Level 0 -> 10 với đường sóng bậc thang phát sáng */}
+            <div className={`p-6 rounded-3xl relative overflow-hidden ${glassCard}`}>
+              <div className="relative z-10 flex items-start justify-between">
+                <div>
+                  <div className={`text-xs font-semibold mb-1 ${mutedText}`}>Tiến độ học tập (Max Lv.10)</div>
+                  <div className="text-4xl font-black tracking-tight">
+                    Level{" "}
+                    <span className="text-blue-400 drop-shadow-[0_0_16px_rgba(59,130,246,0.9)] transition-all duration-500">
+                      {userLevel}
+                    </span>
+                  </div>
+                </div>
+                <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-blue-500/15 border border-blue-400/30 text-cyan-400">
+                  {Math.round((userXP / MAX_XP) * 100)}% Max
+                </span>
+              </div>
+
+              <div className="relative h-36 -mx-6 -mb-6 mt-2">
+                <svg viewBox="0 0 400 150" className="w-full h-full overflow-visible">
+                  <defs>
+                    <linearGradient id="waveAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.42" />
+                      <stop offset="50%" stopColor="#06b6d4" stopOpacity="0.15" />
+                      <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.0" />
+                    </linearGradient>
+                    <filter id="neonGlow" x="-30%" y="-30%" width="160%" height="160%">
+                      <feGaussianBlur stdDeviation="5" result="blur" />
+                      <feMerge>
+                        <feMergeNode in="blur" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+                    <clipPath id="activeProgressClip">
+                      <rect x="0" y="0" width={dotX} height="160" />
+                    </clipPath>
+                  </defs>
+
+                  <path
+                    d="M 20 140 C 80 140, 95 140, 110 115 C 125 90, 175 95, 195 90 C 215 85, 225 48, 255 48 C 285 48, 305 18, 360 15 L 400 15 L 400 150 L 20 150 Z"
+                    fill="url(#waveAreaGrad)"
+                  />
+                  <path
+                    d="M 20 140 C 80 140, 95 140, 110 115 C 125 90, 175 95, 195 90 C 215 85, 225 48, 255 48 C 285 48, 305 18, 360 15"
+                    fill="none"
+                    stroke="#3b82f6"
+                    strokeOpacity="0.45"
+                    strokeWidth="3"
+                  />
+                  <path
+                    d="M 20 140 C 80 140, 95 140, 110 115 C 125 90, 175 95, 195 90 C 215 85, 225 48, 255 48 C 285 48, 305 18, 360 15"
+                    fill="none"
+                    stroke="#ffffff"
+                    strokeWidth="4"
+                    filter="url(#neonGlow)"
+                    clipPath="url(#activeProgressClip)"
+                    className="transition-all duration-500"
+                  />
+                  <circle
+                    cx={dotX}
+                    cy={dotY}
+                    r="5.5"
+                    fill="#ffffff"
+                    stroke="#38bdf8"
+                    strokeWidth="2"
+                    filter="url(#neonGlow)"
+                    className="transition-all duration-500"
+                  />
+                  <line
+                    x1={dotX}
+                    y1={dotY}
+                    x2={Math.min(275, dotX + 20)}
+                    y2="122"
+                    stroke="rgba(148,163,184,0.45)"
+                    strokeDasharray="2 2"
+                    className="transition-all duration-500"
+                  />
+                  <line
+                    x1={Math.min(275, dotX + 20)}
+                    y1="122"
+                    x2="295"
+                    y2="122"
+                    stroke="rgba(148,163,184,0.45)"
+                    strokeDasharray="2 2"
+                    className="transition-all duration-500"
+                  />
+                </svg>
+
+                <div className="absolute bottom-5 right-6 text-xs font-extrabold tracking-wide">
+                  <span className="text-cyan-400">{userXP}</span>{" "}
+                  <span className={mutedText}>/ {MAX_XP} xp</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Thẻ Chuyên đề & Thành tích */}
+            <div className={`p-5 rounded-3xl space-y-4 ${glassCard}`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <span className="text-xs font-bold">Chuyên đề & Thành tích</span>
+                  <span className={`text-xs ${mutedText}`}>&lt; &gt;</span>
+                </div>
+                <button
+                  onClick={() => setDrawerOpen(true)}
+                  className="text-[11px] font-bold text-blue-400 hover:underline cursor-pointer"
+                >
+                  Xem cả 27 chương →
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                {currentGradeObj.courses.map((course, idx) => {
+                  const isSelectedCourse = activeCourse.id === course.id;
+                  return (
+                    <button
+                      key={course.id}
+                      onClick={() => {
+                        setActiveCourseId(course.id);
+                        setActiveLessonId(course.lessons[0].id);
+                        resetLessonQuizState();
+                      }}
+                      className={`p-3.5 rounded-2xl text-left transition-all relative flex items-center space-x-2.5 cursor-pointer ${
+                        isSelectedCourse
+                          ? "bg-gradient-to-br from-blue-600/30 via-indigo-600/20 to-cyan-500/30 border border-blue-400/70 shadow-[0_0_25px_rgba(59,130,246,0.45)]"
+                          : `${subCard} hover:border-blue-400/30`
+                      }`}
+                    >
+                      <div
+                        className={`p-2 rounded-xl shrink-0 ${
+                          isSelectedCourse
+                            ? "bg-blue-500 text-white shadow-[0_0_12px_#3b82f6]"
+                            : "bg-blue-500/10 text-blue-400"
+                        }`}
+                      >
+                        {idx === 0 ? <Layers className="w-4 h-4" /> : <Trophy className="w-4 h-4" />}
+                      </div>
+                      <div className="overflow-hidden">
+                        <div className="text-[10px] font-extrabold uppercase tracking-wider text-blue-400 truncate">
+                          {idx === 0 ? "PHẦN ĐẠI SỐ" : "PHẦN HÌNH HỌC"}
+                        </div>
+                        <div className="text-xs font-bold truncate mt-0.5">
+                          {course.lessons.length} Chương chuẩn
+                        </div>
+                      </div>
+                      {isSelectedCourse && (
+                        <div className="absolute -bottom-1.5 -right-1.5 w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg">
+                          <Check className="w-3 h-3 stroke-[3]" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="space-y-1.5 pt-1 max-h-48 overflow-y-auto no-scrollbar pr-1">
+                {activeCourse.lessons.map((lesson, lIdx) => {
+                  const isCurr = activeLesson.id === lesson.id;
+                  const isDone = completedLessons[lesson.id];
+                  return (
+                    <div key={lesson.id} className="flex items-center space-x-1">
+                      <button
+                        onClick={() => handleSelectLesson(activeCourse.id, lesson.id)}
+                        className={`w-full text-left px-3.5 py-2.5 rounded-2xl text-xs transition-all flex items-center justify-between cursor-pointer ${
+                          isCurr
+                            ? "bg-gradient-to-r from-blue-600/30 to-cyan-500/20 border border-blue-400/60 font-bold text-blue-300 shadow-[0_0_18px_rgba(59,130,246,0.3)]"
+                            : `${subCard} opacity-80 hover:opacity-100`
+                        }`}
+                      >
+                        <span className="truncate pr-2">
+                          {lIdx + 1}. {lesson.title}
+                        </span>
+                        {isDone ? (
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                        ) : (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-blue-400 shrink-0">
+                            20 câu
+                          </span>
+                        )}
+                      </button>
+                      {isInternalUnlocked && (
+                        <button
+                          onClick={() => openDirectEditModal("lesson", lesson)}
+                          className="p-2 rounded-xl bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 cursor-pointer shrink-0"
+                          title="Sửa chương này"
+                        >
+                          <Edit className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         )}
 
-        <main className={`flex-1 rounded-[28px] flex flex-col overflow-hidden relative ${liquidWindowGlass}`}>
-          <div className="px-5 py-3.5 border-b border-white/20 flex items-center justify-between gap-3 shrink-0">
-            <div className="flex items-center space-x-3 overflow-hidden">
-              {isSidebarCollapsed && (
-                <button
-                  onClick={() => setIsSidebarCollapsed(false)}
-                  className={`px-3 py-2 rounded-2xl text-xs font-extrabold flex items-center space-x-1.5 cursor-pointer ${liquidPillGlass}`}
-                >
-                  <PanelLeftOpen className="w-4 h-4 text-sky-400" />
-                  <span>Mục lục</span>
-                </button>
-              )}
-              <h2 className="text-sm font-black truncate">{activeLesson.title}</h2>
+        {/* CỘT PHẢI (7 CỘT HOẶC MỞ RỘNG TOÀN BỘ 12 CỘT): BẢNG ĐIỀU KHIỂN HỌC TẬP & MA TRẬN ĐỀ */}
+        <div className={`${sidebarCollapsed ? "lg:col-span-12" : "lg:col-span-7"} p-5 sm:p-6 rounded-[32px] space-y-4 transition-all duration-300 ${glassCard}`}>
+          
+          {/* KHỐI 1 (Tương ứng khung "Sell 25 FWOG"): Chuyên đề đang học & Bộ chọn khối */}
+          <div className={`p-5 rounded-3xl relative ${subCard}`}>
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <span className={`text-xs font-semibold ${mutedText}`}>
+                Chuyên đề đang chọn • {currentGradeObj.name}
+              </span>
+
+              <button
+                onClick={() => setDrawerOpen(true)}
+                className="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-xs font-bold transition-all cursor-pointer"
+              >
+                <span className="w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-400 flex items-center justify-center text-emerald-400">
+                  <GraduationCap className="w-3 h-3" />
+                </span>
+                <span>{currentGradeObj.name.replace("Khối ", "")}</span>
+                <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+              </button>
             </div>
 
-            <div className="flex items-center p-1 rounded-2xl bg-black/15 border border-white/20">
-              <button
-                onClick={() => setActiveTab("theory")}
-                className={`px-3 py-1.5 rounded-xl text-xs font-extrabold ${activeTab === "theory" ? "bg-white text-slate-900 shadow-md" : "opacity-80"}`}
-              >
-                1. Lý thuyết
-              </button>
-              <button
-                onClick={() => setActiveTab("quiz")}
-                className={`px-3 py-1.5 rounded-xl text-xs font-extrabold ${activeTab === "quiz" ? "bg-white text-slate-900 shadow-md" : "opacity-80"}`}
-              >
-                2. Bài kiểm tra (20 câu)
-              </button>
-              <button
-                onClick={() => setActiveTab("notes")}
-                className={`px-3 py-1.5 rounded-xl text-xs font-extrabold ${activeTab === "notes" ? "bg-white text-slate-900 shadow-md" : "opacity-80"}`}
-              >
-                3. Ghi chú
-              </button>
+            <div className="flex items-start justify-between gap-3">
+              <h2 className="text-lg sm:text-xl font-black leading-snug">
+                {activeLesson.title}
+              </h2>
+              {isInternalUnlocked && (
+                <button
+                  onClick={() => openDirectEditModal("lesson", activeLesson)}
+                  className="p-2 rounded-xl bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 shrink-0 cursor-pointer"
+                  title="Sửa tiêu đề & lý thuyết"
+                >
+                  <Edit className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden p-6 max-w-4xl mx-auto w-full select-auto space-y-6">
+          <div className="relative h-2 flex items-center justify-center z-10">
+            <button
+              onClick={() =>
+                setActiveTab(activeTab === "theory" ? "quiz" : "theory")
+              }
+              className={`w-9 h-9 rounded-full flex items-center justify-center border transition-transform hover:rotate-180 cursor-pointer ${
+                isDark
+                  ? "bg-[#161c2e] border-white/15 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.4)]"
+                  : "bg-white border-blue-200 text-blue-600 shadow-md"
+              }`}
+              title="Chuyển nhanh giữa Lý thuyết và Bài kiểm tra"
+            >
+              <ArrowUpDown className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className={`p-5 rounded-3xl relative overflow-hidden ${subCard}`}>
+            <div className="absolute -bottom-8 -right-8 w-44 h-24 bg-blue-500/35 blur-2xl rounded-full pointer-events-none" />
+
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  onClick={() => setActiveTab("theory")}
+                  className={`px-4 py-2.5 rounded-2xl text-xs font-extrabold transition-all flex items-center space-x-1.5 cursor-pointer ${
+                    activeTab === "theory"
+                      ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-[0_0_20px_rgba(59,130,246,0.6)]"
+                      : "hover:bg-white/5 opacity-75 hover:opacity-100"
+                  }`}
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>1. Lý thuyết</span>
+                </button>
+
+                <button
+                  onClick={() => setActiveTab("quiz")}
+                  className={`px-4 py-2.5 rounded-2xl text-xs font-extrabold transition-all flex items-center space-x-1.5 cursor-pointer ${
+                    activeTab === "quiz"
+                      ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-[0_0_20px_rgba(59,130,246,0.6)]"
+                      : "hover:bg-white/5 opacity-75 hover:opacity-100"
+                  }`}
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>2. Kiểm tra (20 câu)</span>
+                </button>
+
+                <button
+                  onClick={() => setActiveTab("notes")}
+                  className={`px-4 py-2.5 rounded-2xl text-xs font-extrabold transition-all flex items-center space-x-1.5 cursor-pointer ${
+                    activeTab === "notes"
+                      ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-[0_0_20px_rgba(59,130,246,0.6)]"
+                      : "hover:bg-white/5 opacity-75 hover:opacity-100"
+                  }`}
+                >
+                  <Bookmark className="w-3.5 h-3.5" />
+                  <span>3. Sổ tay</span>
+                </button>
+              </div>
+
+              <div className="text-right px-3 py-1 rounded-2xl bg-blue-500/15 border border-blue-400/40 shadow-[0_0_20px_rgba(59,130,246,0.35)]">
+                <div className="text-[10px] text-blue-300 font-semibold">Mục tiêu tối đa</div>
+                <div className="text-sm font-black">
+                  <span className="text-cyan-400">10.0</span> ĐIỂM
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className={`p-5 rounded-3xl space-y-3 ${subCard}`}>
+            <div className="flex items-center justify-between">
+              <span className={`text-xs font-semibold ${mutedText}`}>
+                Tiến độ Ma trận Đề kiểm tra
+              </span>
+              <span className="text-2xl font-black tracking-tight">
+                {totalAnswered}
+                <span className={`text-sm font-bold ${mutedText}`}>/{totalQuestions} câu</span>
+              </span>
+            </div>
+
+            <div className="pt-1 pb-2">
+              <div className="flex justify-between text-[10px] font-bold opacity-60 mb-2 px-1">
+                <span>Lý thuyết</span>
+                <span>TN ({answeredQuizCount}/12)</span>
+                <span>Đ/S ({answeredTfCount}/4)</span>
+                <span>Ngắn ({answeredSaCount}/4)</span>
+                <span>Đích 10đ</span>
+              </div>
+              <div className="relative h-2.5 rounded-full bg-black/40 border border-white/10 overflow-visible flex items-center">
+                <div
+                  style={{ width: `${Math.max(8, progressRatio)}%` }}
+                  className="h-full rounded-full bg-gradient-to-r from-blue-600 via-blue-400 to-white shadow-[0_0_16px_#3b82f6] transition-all duration-300 relative"
+                >
+                  <span className="absolute -right-2 -top-1 w-4 h-4 rounded-full bg-white border-2 border-blue-400 shadow-[0_0_15px_#ffffff,0_0_25px_#3b82f6]" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className={`p-5 sm:p-6 rounded-3xl max-h-[540px] overflow-y-auto no-scrollbar select-auto space-y-5 ${subCard}`}>
             {activeTab === "theory" && (
-              <div className="space-y-6">
-                <div className={`p-6 rounded-3xl space-y-3 ${liquidCardGlass}`}>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                  <div className="flex items-center space-x-2">
+                    <Sparkles className="w-4 h-4 text-cyan-400" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-cyan-400">
+                      Kiến thức Sổ tay Toán THCS
+                    </span>
+                  </div>
+                  {isInternalUnlocked && (
+                    <button
+                      onClick={() => openDirectEditModal("theory", activeLesson)}
+                      className="px-3 py-1 rounded-xl bg-blue-500/20 text-blue-300 border border-blue-400/30 text-xs font-bold flex items-center space-x-1 cursor-pointer"
+                    >
+                      <Edit className="w-3 h-3" />
+                      <span>Sửa Lý thuyết</span>
+                    </button>
+                  )}
+                </div>
+
+                <div className="space-y-2.5 leading-relaxed">
                   {activeLesson.theory.split("\n").map((line, i) => {
                     if (line.startsWith("### ")) {
                       return (
-                        <h3 key={i} className="text-base font-black text-sky-400 pt-3 pb-1 border-b border-white/20">
+                        <h3
+                          key={i}
+                          className="text-sm sm:text-base font-extrabold text-cyan-400 pt-3 pb-1 border-b border-white/10"
+                        >
                           {line.replace("### ", "")}
                         </h3>
                       );
                     }
-                    return <p key={i} className="text-sm leading-relaxed whitespace-pre-wrap">{line}</p>;
+                    return (
+                      <p
+                        key={i}
+                        className={`text-xs sm:text-sm whitespace-pre-wrap leading-relaxed ${
+                          isDark ? "text-slate-200" : "text-slate-700"
+                        }`}
+                      >
+                        {line}
+                      </p>
+                    );
                   })}
-                </div>
-                <div className="flex justify-end pb-6">
-                  <button
-                    onClick={() => setActiveTab("quiz")}
-                    className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-sky-500 to-indigo-600 text-white text-xs font-extrabold shadow-lg cursor-pointer"
-                  >
-                    Bắt đầu làm bài kiểm tra 20 câu →
-                  </button>
                 </div>
               </div>
             )}
 
             {activeTab === "quiz" && (
-              <div className="space-y-7 pb-10">
+              <div className="space-y-7">
                 <div className="space-y-4">
-                  <h3 className="font-black text-sm sm:text-base text-sky-400">Phần I: Trắc nghiệm (12 câu)</h3>
+                  <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                    <h3 className="text-sm font-extrabold text-blue-400">
+                      PHẦN I. Trắc nghiệm khách quan (12 câu — 3,0 điểm)
+                    </h3>
+                    {quizSubmitted && (
+                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">
+                        Đúng {quizScore}/{totalQuizCount}
+                      </span>
+                    )}
+                  </div>
+
                   {activeLesson.quiz.map((q, qIdx) => (
-                    <div key={qIdx} className={`p-5 rounded-3xl space-y-3 ${liquidCardGlass}`}>
-                      <h4 className="font-extrabold text-xs sm:text-sm">Câu {qIdx + 1}: {q.question}</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                    <div
+                      key={qIdx}
+                      className={`p-4 rounded-2xl border space-y-3 ${
+                        isDark ? "bg-[#0e1320]/90 border-white/10" : "bg-white border-blue-100"
+                      }`}
+                    >
+                      <div className="text-xs sm:text-sm font-bold">
+                        <span className="text-cyan-400 mr-1.5">Câu {qIdx + 1}:</span>
+                        {q.question}
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {q.options.map((opt, optIdx) => {
                           const isSelected = selectedAnswers[qIdx] === optIdx;
+                          let style = isDark
+                            ? "border-white/10 hover:border-blue-400/40 bg-white/[0.03]"
+                            : "border-slate-200 hover:border-blue-400 bg-slate-50";
+
+                          if (isSelected) {
+                            style =
+                              "border-blue-400 bg-blue-600/25 text-blue-300 font-bold shadow-[0_0_15px_rgba(59,130,246,0.4)]";
+                          }
+                          if (quizSubmitted) {
+                            if (optIdx === q.correctIndex) {
+                              style =
+                                "border-emerald-400 bg-emerald-500/25 text-emerald-300 font-bold";
+                            } else if (isSelected) {
+                              style = "border-rose-400 bg-rose-500/25 text-rose-300 font-bold";
+                            }
+                          }
+
                           return (
                             <button
                               key={optIdx}
-                              onClick={() => setSelectedAnswers(prev => ({ ...prev, [qIdx]: optIdx }))}
-                              className={`w-full text-left px-4 py-3 rounded-2xl text-xs transition-all cursor-pointer ${
-                                isSelected ? "bg-sky-500 text-white font-extrabold" : liquidPillGlass
-                              }`}
+                              onClick={() => {
+                                if (quizSubmitted) return;
+                                setSelectedAnswers(prev => ({ ...prev, [qIdx]: optIdx }));
+                              }}
+                              disabled={quizSubmitted}
+                              className={`text-left px-3.5 py-2.5 rounded-xl border text-xs transition-all flex items-center justify-between cursor-pointer ${style}`}
                             >
-                              {String.fromCharCode(65 + optIdx)}. {opt}
+                              <span>
+                                {String.fromCharCode(65 + optIdx)}. {opt}
+                              </span>
+                              {quizSubmitted && optIdx === q.correctIndex && (
+                                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                              )}
                             </button>
                           );
                         })}
                       </div>
+                      {quizSubmitted && (
+                        <div className="text-[11px] p-2.5 rounded-xl bg-blue-500/10 border border-blue-400/20 text-blue-300">
+                          <strong>Giải thích:</strong> {q.explanation}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
 
-                <button
-                  onClick={handleSubmitQuizAndEssay}
-                  className="w-full py-4 rounded-3xl bg-gradient-to-r from-sky-500 to-indigo-600 text-white font-black text-sm cursor-pointer shadow-xl"
-                >
-                  Nộp bài kiểm tra ngay
-                </button>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                    <h3 className="text-sm font-extrabold text-cyan-400">
+                      PHẦN II. Trắc nghiệm Đúng / Sai (4 câu — 4,0 điểm)
+                    </h3>
+                    {quizSubmitted && (
+                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">
+                        Đúng {tfScore}/{totalTfCount}
+                      </span>
+                    )}
+                  </div>
+
+                  {activeLesson.trueFalse.map((tf, tfIdx) => {
+                    const userVal = trueFalseAnswers[tfIdx];
+                    return (
+                      <div
+                        key={tfIdx}
+                        className={`p-4 rounded-2xl border space-y-3 ${
+                          isDark ? "bg-[#0e1320]/90 border-white/10" : "bg-white border-blue-100"
+                        }`}
+                      >
+                        <div className="text-xs sm:text-sm font-bold">
+                          Mệnh đề {tfIdx + 1}: {tf.statement}
+                        </div>
+                        <div className="grid grid-cols-2 gap-2.5">
+                          {[
+                            { label: "ĐÚNG", val: true, icon: Check },
+                            { label: "SAI", val: false, icon: X }
+                          ].map(btn => {
+                            const Icon = btn.icon;
+                            const active = userVal === btn.val;
+                            return (
+                              <button
+                                key={btn.label}
+                                onClick={() => {
+                                  if (quizSubmitted) return;
+                                  setTrueFalseAnswers(prev => ({ ...prev, [tfIdx]: btn.val }));
+                                }}
+                                disabled={quizSubmitted}
+                                className={`py-2 rounded-xl border text-xs font-bold flex items-center justify-center space-x-1.5 transition-all cursor-pointer ${
+                                  active
+                                    ? "bg-blue-600/30 border-blue-400 text-blue-300 shadow-[0_0_15px_rgba(59,130,246,0.4)]"
+                                    : "border-white/10 hover:border-blue-400/40 opacity-75"
+                                }`}
+                              >
+                                <Icon className="w-3.5 h-3.5" />
+                                <span>{btn.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {quizSubmitted && (
+                          <div className="text-[11px] p-2.5 rounded-xl bg-blue-500/10 border border-blue-400/20 text-blue-300">
+                            <strong>Đáp án: {tf.correct ? "ĐÚNG" : "SAI"}.</strong> {tf.explanation}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                    <h3 className="text-sm font-extrabold text-indigo-400">
+                      PHẦN III. Tự luận trả lời ngắn (4 câu — 3,0 điểm)
+                    </h3>
+                    {quizSubmitted && (
+                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">
+                        Đúng {saScore}/{totalSaCount}
+                      </span>
+                    )}
+                  </div>
+
+                  {activeLesson.shortAnswer.map((sa, saIdx) => (
+                    <div
+                      key={saIdx}
+                      className={`p-4 rounded-2xl border space-y-3 ${
+                        isDark ? "bg-[#0e1320]/90 border-white/10" : "bg-white border-blue-100"
+                      }`}
+                    >
+                      <div className="text-xs sm:text-sm font-bold">
+                        Câu {saIdx + 1}: {sa.question}
+                      </div>
+                      <input
+                        type="text"
+                        value={shortAnswers[saIdx] || ""}
+                        onChange={e => {
+                          if (quizSubmitted) return;
+                          setShortAnswers(prev => ({ ...prev, [saIdx]: e.target.value }));
+                        }}
+                        disabled={quizSubmitted}
+                        placeholder="Nhập đáp số ngắn gọn (VD: 20, -1/6, 4√3)..."
+                        className={`w-full px-4 py-2.5 rounded-xl border text-xs font-bold focus:outline-none focus:border-blue-400 ${
+                          isDark
+                            ? "bg-black/40 border-white/15 text-cyan-300"
+                            : "bg-slate-50 border-slate-300 text-blue-900"
+                        }`}
+                      />
+                      {quizSubmitted && (
+                        <div className="text-[11px] p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-400/30 text-emerald-300 space-y-1">
+                          <div>
+                            <strong>Đáp số chuẩn:</strong> <code>{sa.correctAnswer}</code>
+                          </div>
+                          <div>
+                            <strong>Hướng dẫn:</strong> {sa.rubric}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
 
                 {essayEvaluation && (
-                  <div className={`p-5 rounded-3xl whitespace-pre-wrap text-xs ${liquidCardGlass}`}>
+                  <div className="p-4 rounded-2xl bg-blue-600/15 border border-blue-400/40 text-xs whitespace-pre-wrap leading-relaxed">
                     {essayEvaluation}
                   </div>
                 )}
@@ -1210,66 +2084,390 @@ export default function App() {
             )}
 
             {activeTab === "notes" && (
-              <div className={`p-6 rounded-3xl space-y-4 ${liquidCardGlass}`}>
-                <h3 className="font-black text-sm">Ghi chú cá nhân</h3>
+              <div className="space-y-3">
+                <div className="text-xs font-bold text-cyan-400">
+                  Sổ tay ghi chú cá nhân — {activeLesson.title}
+                </div>
                 <textarea
                   value={userNotes[activeLesson.id] || ""}
-                  onChange={e => setUserNotes(prev => ({ ...prev, [activeLesson.id]: e.target.value }))}
-                  placeholder="Ghi lại công thức..."
-                  className="w-full h-72 p-4 rounded-2xl text-xs bg-black/3ul border border-white/20 focus:outline-none"
+                  onChange={e =>
+                    setUserNotes(prev => ({ ...prev, [activeLesson.id]: e.target.value }))
+                  }
+                  placeholder="Ghi chú lại các công thức, mẹo giải nhanh hoặc lỗi sai cần tránh..."
+                  className={`w-full h-56 p-4 rounded-2xl border text-xs leading-relaxed focus:outline-none focus:border-blue-400 resize-none ${
+                    isDark
+                      ? "bg-black/30 border-white/10 text-slate-100"
+                      : "bg-white border-slate-200 text-slate-800"
+                  }`}
                 />
               </div>
             )}
           </div>
-        </main>
-      </div>
 
-      {/* TRỢ LÝ ARGON AI */}
-      <div className="fixed bottom-5 right-5 z-40">
+          <div className="pt-1 space-y-2.5 px-2 text-xs">
+            <div className="flex items-center justify-between">
+              <span className={`flex items-center space-x-2 ${mutedText}`}>
+                <Zap className="w-3.5 h-3.5 text-blue-400" />
+                <span>Hệ số điểm thưởng</span>
+              </span>
+              <span className="font-extrabold">x3.6 XP</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className={`flex items-center space-x-2 ${mutedText}`}>
+                <Award className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Tỉ lệ hoàn thành bài kiểm tra</span>
+              </span>
+              <span className="font-extrabold">{progressRatio}%</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className={`flex items-center space-x-2 ${mutedText}`}>
+                <Layers className="w-3.5 h-3.5 text-indigo-400" />
+                <span>Cấu trúc đề chuẩn</span>
+              </span>
+              <span className="font-extrabold">12 TN • 4 Đ/S • 4 Ngắn</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className={`flex items-center space-x-2 ${mutedText}`}>
+                <Bot className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Trợ lý chấm điểm</span>
+              </span>
+              <span className="font-extrabold text-cyan-400">Gia sư AI Argon</span>
+            </div>
+          </div>
+
+          <div className="pt-2">
+            {activeTab === "theory" ? (
+              <button
+                onClick={handleFinishReadingTheory}
+                className="w-full py-4 rounded-2xl font-extrabold text-sm text-white bg-gradient-to-r from-[#1e3a8a] via-[#2563eb] to-[#1e3a8a] border border-blue-400/60 shadow-[0_0_35px_rgba(59,130,246,0.6),inset_0_1px_1px_rgba(255,255,255,0.4)] hover:shadow-[0_0_50px_rgba(59,130,246,0.9)] transition-all cursor-pointer"
+              >
+                Đã hiểu Lý thuyết — Bắt đầu Làm Đề 20 Câu
+              </button>
+            ) : !quizSubmitted ? (
+              <button
+                onClick={handleSubmitQuizAndEssay}
+                disabled={!canSubmitAll}
+                className={`w-full py-4 rounded-2xl font-extrabold text-sm transition-all ${
+                  canSubmitAll
+                    ? "text-white bg-gradient-to-r from-[#1e3a8a] via-[#2563eb] to-[#1e3a8a] border border-blue-400/60 shadow-[0_0_35px_rgba(59,130,246,0.65),inset_0_1px_1px_rgba(255,255,255,0.4)] cursor-pointer"
+                    : "bg-white/5 text-slate-500 border border-white/10 cursor-not-allowed"
+                }`}
+              >
+                {canSubmitAll
+                  ? "Nộp bài & Chấm điểm cùng Argon (+500 XP)"
+                  : `Hoàn thành đủ 20 câu để Nộp bài (Đã làm ${totalAnswered}/20 câu)`}
+              </button>
+            ) : (
+              <button
+                onClick={resetLessonQuizState}
+                className="w-full py-4 rounded-2xl font-extrabold text-sm text-white bg-gradient-to-r from-emerald-600 to-teal-500 border border-emerald-300/50 shadow-[0_0_30px_rgba(16,185,129,0.5)] cursor-pointer"
+              >
+                Làm lại đề này để nâng cao điểm số
+              </button>
+            )}
+          </div>
+        </div>
+      </main>
+
+      {/* FLOATING CHATBOX GIA SƯ ARGON */}
+      <div className="fixed bottom-6 right-6 z-40">
         {!chatOpen ? (
           <button
             onClick={() => setChatOpen(true)}
-            className="px-5 py-3.5 rounded-full bg-[#131126]/90 hover:bg-[#1c1936] text-white border border-white/25 shadow-2xl backdrop-blur-2xl flex items-center space-x-2.5 cursor-pointer"
+            className="w-14 h-14 rounded-full bg-gradient-to-b from-[#1e293b] to-[#0f172a] border border-blue-400/50 shadow-[0_0_30px_rgba(59,130,246,0.7),inset_0_1px_2px_rgba(255,255,255,0.3)] flex items-center justify-center text-white hover:scale-105 transition-transform cursor-pointer relative"
+            title="Trò chuyện cùng Gia sư AI Argon"
           >
-            <Sparkles className="w-4 h-4 text-indigo-300" />
-            <span className="text-xs font-extrabold tracking-wider uppercase">ARGON • AI ASSISTANT</span>
+            <Headphones className="w-6 h-6 text-blue-300" />
+            <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 rounded-full bg-rose-500 border border-white animate-ping" />
+            <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 rounded-full bg-rose-500 border border-white" />
           </button>
         ) : (
-          <div className="w-[380px] sm:w-[440px] rounded-[34px] p-5 bg-[#100e20]/90 backdrop-blur-3xl border border-white/25 shadow-2xl text-white relative">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-3">
-              <span className="font-extrabold text-sm">Gia sư Argon AI</span>
-              <button onClick={() => setChatOpen(false)} className="p-1.5 rounded-full hover:bg-white/20 cursor-pointer">
-                <X className="w-4 h-4" />
+          <div
+            style={{
+              width: chatExpanded ? "min(92vw, 600px)" : "min(92vw, 380px)",
+              height: chatExpanded ? "min(82vh, 660px)" : "500px"
+            }}
+            className={`rounded-3xl flex flex-col overflow-hidden transition-all duration-200 ${glassCard} border-blue-400/40`}
+          >
+            <div className="p-4 bg-gradient-to-r from-blue-950/90 via-indigo-950/90 to-slate-900/90 border-b border-white/10 flex items-center justify-between text-white">
+              <div className="flex items-center space-x-2.5">
+                <div className="p-2 rounded-xl bg-blue-600 shadow-[0_0_15px_#3b82f6]">
+                  <Bot className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm">Gia sư AI Argon</h3>
+                  <p className="text-[10px] text-blue-300">Sẵn sàng gợi ý & chấm bài 24/7</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-1">
+                <button
+                  onClick={() => setChatExpanded(!chatExpanded)}
+                  className="p-1.5 rounded-lg hover:bg-white/10 cursor-pointer"
+                >
+                  {chatExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                </button>
+                <button
+                  onClick={() => setChatOpen(false)}
+                  className="p-1.5 rounded-lg hover:bg-white/10 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="px-3 py-2 border-b border-white/10 flex gap-1.5 overflow-x-auto">
+              <button
+                onClick={() => setInputMessage("Argon gợi ý giải 4 câu trả lời ngắn giúp em!")}
+                className="px-3 py-1 rounded-full bg-blue-500/15 border border-blue-400/30 text-blue-300 text-[10px] font-bold shrink-0 cursor-pointer"
+              >
+                Gợi ý 4 câu trả lời ngắn
+              </button>
+              <button
+                onClick={() => setInputMessage("Tóm tắt công thức trọng tâm chương này!")}
+                className="px-3 py-1 rounded-full bg-blue-500/15 border border-blue-400/30 text-blue-300 text-[10px] font-bold shrink-0 cursor-pointer"
+              >
+                Tóm tắt công thức
               </button>
             </div>
 
-            <div className="h-60 overflow-y-auto space-y-2 mb-3 pr-1 select-auto">
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 select-auto">
               {chatMessages.map((msg, idx) => (
-                <div key={idx} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-xs ${msg.sender === "user" ? "bg-indigo-600 text-white" : "bg-white/10 text-slate-100"}`}>
+                <div
+                  key={idx}
+                  className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  <div
+                    className={`max-w-[85%] p-3.5 rounded-2xl text-xs whitespace-pre-wrap leading-relaxed ${
+                      msg.sender === "user"
+                        ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-br-none shadow-[0_0_15px_rgba(59,130,246,0.4)]"
+                        : `${subCard} rounded-bl-none`
+                    }`}
+                  >
                     {msg.text}
                   </div>
                 </div>
               ))}
+              {isBotTyping && (
+                <div className="text-[11px] text-blue-400 italic px-2">
+                  Argon đang suy nghĩ...
+                </div>
+              )}
               <div ref={chatBottomRef} />
             </div>
 
-            <div className="flex items-center px-3 py-2 rounded-2xl bg-white/10 border border-white/20">
+            <div className="p-3 border-t border-white/10 flex items-center space-x-2">
               <input
                 type="text"
                 value={inputMessage}
                 onChange={e => setInputMessage(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && triggerArgonPrompt()}
-                placeholder="Hỏi Argon bài toán..."
-                className="flex-1 bg-transparent text-xs text-white placeholder-slate-300 focus:outline-none"
+                onKeyDown={e => e.key === "Enter" && handleSendMessage()}
+                placeholder="Hỏi Gia sư Argon..."
+                className={`flex-1 px-3.5 py-2.5 rounded-xl text-xs focus:outline-none border ${
+                  isDark
+                    ? "bg-black/40 border-white/15 text-white"
+                    : "bg-slate-100 border-slate-300 text-slate-900"
+                }`}
               />
-              <button onClick={() => triggerArgonPrompt()} className="p-2 bg-white text-slate-900 rounded-full cursor-pointer">
-                <ArrowRight className="w-3.5 h-3.5" />
+              <button
+                onClick={handleSendMessage}
+                className="p-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_15px_#3b82f6] cursor-pointer"
+              >
+                <Send className="w-4 h-4" />
               </button>
             </div>
           </div>
         )}
       </div>
+
+      {/* MODAL QUẢN TRỊ NỘI BỘ (Mở khóa bằng KEY) */}
+      {settingsOpen && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className={`max-w-xl w-full rounded-3xl overflow-hidden ${glassCard}`}>
+            <div className="p-5 border-b border-white/10 flex items-center justify-between">
+              <div className="flex items-center space-x-2.5">
+                <Settings className="w-5 h-5 text-blue-400" />
+                <div>
+                  <h3 className="font-extrabold text-sm">Quản trị Nội bộ — EduAI Studio</h3>
+                  <p className={`text-[11px] ${mutedText}`}>
+                    Mở khóa bằng KEY để sửa bài học & cấu hình AI
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSettingsOpen(false)}
+                className="p-1.5 rounded-xl hover:bg-white/10 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
+              {!isInternalUnlocked ? (
+                <div className="space-y-4">
+                  <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-400/30 flex items-start space-x-3 text-xs text-amber-300">
+                    <Key className="w-5 h-5 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold">Yêu cầu xác thực KEY Nội bộ</p>
+                      <p className="opacity-80 mt-0.5">
+                        Nhập mã KEY định dạng <code>ARGON-ABC123456ABC</code> hoặc nhấn nút gửi KEY qua Discord.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex space-x-2">
+                    <input
+                      type="password"
+                      value={keyInput}
+                      onChange={e => setKeyInput(e.target.value)}
+                      onKeyDown={e => e.key === "Enter" && handleVerifyInternalKey()}
+                      placeholder="Nhập KEY nội bộ..."
+                      className="flex-1 px-4 py-3 rounded-xl bg-black/40 border border-white/15 text-xs font-mono"
+                    />
+                    <button
+                      onClick={handleVerifyInternalKey}
+                      className="px-5 py-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-[0_0_15px_#3b82f6] cursor-pointer"
+                    >
+                      Mở khóa
+                    </button>
+                  </div>
+
+                  {keyError && (
+                    <p className="text-xs text-rose-400 font-semibold flex items-center">
+                      <AlertCircle className="w-4 h-4 mr-1.5 shrink-0" /> {keyError}
+                    </p>
+                  )}
+
+                  <button
+                    onClick={handleSendKeyToDiscord}
+                    className="w-full py-3 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-bold flex items-center justify-center space-x-2 cursor-pointer"
+                  >
+                    <Send className="w-4 h-4 text-cyan-400" />
+                    <span>Gửi KEY hôm nay qua Discord</span>
+                  </button>
+
+                  {webhookStatus && (
+                    <p className="text-xs text-center text-cyan-300 bg-cyan-500/10 p-2.5 rounded-xl border border-cyan-400/20">
+                      {webhookStatus}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="p-3 rounded-2xl bg-emerald-500/15 border border-emerald-400/40 flex items-center justify-between text-xs text-emerald-300 font-bold">
+                    <span className="flex items-center space-x-2">
+                      <ShieldCheck className="w-4 h-4" />
+                      <span>Đã mở khóa quyền Quản trị Nội bộ</span>
+                    </span>
+                    <button
+                      onClick={() => {
+                        setIsInternalUnlocked(false);
+                        setKeyInput("");
+                      }}
+                      className="text-rose-400 hover:underline cursor-pointer"
+                    >
+                      Khóa lại
+                    </button>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold block">Discord Webhook URL:</label>
+                    <input
+                      type="text"
+                      value={discordWebhookUrl}
+                      onChange={e => {
+                        setDiscordWebhookUrl(e.target.value);
+                        localStorage.setItem("eduai_discord_webhook", e.target.value);
+                      }}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/15 text-xs font-mono"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold block">Gemini API Key:</label>
+                    <input
+                      type="password"
+                      value={geminiApiKey}
+                      onChange={e => {
+                        setGeminiApiKey(e.target.value);
+                        localStorage.setItem("eduai_gemini_api_key", e.target.value);
+                      }}
+                      placeholder="AIza..."
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/15 text-xs"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold block">System Prompt Gia sư Argon:</label>
+                    <textarea
+                      value={argonSystemPrompt}
+                      onChange={e => {
+                        setArgonSystemPrompt(e.target.value);
+                        localStorage.setItem("eduai_argon_prompt", e.target.value);
+                      }}
+                      className="w-full h-28 p-3 rounded-xl bg-black/40 border border-white/15 text-xs"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL SỬA TRỰC TIẾP NỘI DUNG BÀI HỌC */}
+      {editModalOpen && editingTarget && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className={`max-w-2xl w-full rounded-3xl overflow-hidden ${glassCard}`}>
+            <div className="p-5 border-b border-white/10 flex items-center justify-between">
+              <h3 className="font-extrabold text-sm">Chỉnh sửa trực tiếp nội dung</h3>
+              <button
+                onClick={() => setEditModalOpen(false)}
+                className="p-1.5 rounded-xl hover:bg-white/10 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              {editFormValues.title !== undefined && (
+                <div>
+                  <label className="text-xs font-bold block mb-1">Tiêu đề:</label>
+                  <input
+                    type="text"
+                    value={editFormValues.title}
+                    onChange={e => setEditFormValues({ ...editFormValues, title: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/15 text-xs font-bold"
+                  />
+                </div>
+              )}
+              {editFormValues.theory !== undefined && (
+                <div>
+                  <label className="text-xs font-bold block mb-1">Nội dung Lý thuyết:</label>
+                  <textarea
+                    value={editFormValues.theory}
+                    onChange={e => setEditFormValues({ ...editFormValues, theory: e.target.value })}
+                    className="w-full h-64 p-3.5 rounded-xl bg-black/40 border border-white/15 text-xs font-mono leading-relaxed"
+                  />
+                </div>
+              )}
+              <div className="flex justify-end space-x-2 pt-2">
+                <button
+                  onClick={() => setEditModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-white/10 text-xs font-bold cursor-pointer"
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={handleSaveDirectEdit}
+                  className="px-5 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold flex items-center space-x-1.5 shadow-[0_0_15px_#3b82f6] cursor-pointer"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Lưu thay đổi</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
